@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+# La hoja de datos y los PDF originales viven fuera del repo (mapa_bonos/)
+*.xlsx
+*.pdf
