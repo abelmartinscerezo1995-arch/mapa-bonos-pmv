@@ -5,111 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu pack en el mapa</title>
 <meta name="description" content="Escuela, restaurantes y tiendas de alquiler de tu pack de esquí, en el mapa.">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-  :root {
-    color-scheme: light;
-    --bg: #f4f6f9;
-    --card: #ffffff;
-    --ink: #17202b;
-    --muted: #5a6573;
-    --line: #dfe5ec;
-    --brand: #0b2b4c;
-    --accent: #0a6ebd;
-    --express: #d9480f;
-    --self: #2b8a3e;
-    --no: #98a2ae;
-    --radius: 12px;
-  }
+  :root { color-scheme: light; }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { margin: 0; background: #f4f6f9; color: #17202b; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
   .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
-  button, select, input { font: inherit; }
-
-  header.top { background: var(--brand); color: #fff; padding: 18px 0 16px; }
+  header.top { background: #0b2b4c; color: #fff; padding: 18px 0 16px; }
   header .eyebrow { margin: 0; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
   header h1 { margin: 2px 0 10px; font-size: 24px; line-height: 1.2; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: 13px; }
-
-  details.demo { margin-top: 12px; background: #fff8db; border: 1px dashed #d9b84a; border-radius: var(--radius); padding: 8px 12px; font-size: 14px; }
+  .chip { padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: 13px; }
+  details.demo { margin: 12px 0; background: #fff8db; border: 1px dashed #d9b84a; border-radius: 12px; padding: 8px 12px; font-size: 14px; }
   details.demo summary { cursor: pointer; font-weight: 600; }
   .demo-grid { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 8px; }
   .demo-grid label { display: inline-flex; align-items: center; gap: 6px; }
   .demo code { font-size: 12px; word-break: break-all; }
-  .demo .hint { margin: 8px 0 2px; color: var(--muted); }
-
-  nav.tabs { display: flex; gap: 6px; margin-top: 14px; overflow-x: auto; }
-  .tab { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; }
-  .tab svg { width: 18px; height: 18px; }
-  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  main { padding-top: 12px; padding-bottom: 32px; }
-  .panel[hidden] { display: none; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
-  .card h2 { margin: 0 0 6px; font-size: 18px; }
-  .card ul.puntos { margin: 0; padding-left: 18px; }
-  .card ul.puntos li { margin: 2px 0; }
-  .muted { color: var(--muted); }
-
-  .controles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
-  .seg button { border: 0; background: transparent; padding: 7px 12px; cursor: pointer; color: var(--ink); }
-  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-  .filtro { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
-  .filtro[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); font-weight: 600; }
-  .filtro i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .btn-link { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-weight: 600; }
-
-  .mapa { height: 62vh; min-height: 340px; max-height: 620px; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: #e9eef3; }
-  .leaflet-container { font: inherit; }
-  .aviso-mapa { background: rgba(23,32,43,.85); color: #fff; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; }
-
-  .pin { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); position: relative; }
-  .pin svg { width: 18px; height: 18px; }
-  .pin b { position: absolute; top: -7px; right: -9px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--ink); color: #fff; font-size: 12px; line-height: 20px; text-align: center; border: 2px solid #fff; }
-  .pin.escuela { background: var(--accent); }
-  .pin.rest { background: var(--express); }
-  .pin.rest.selfm { background: var(--self); }
-  .pin.rest.no { background: var(--no); }
-  .pin.tienda { width: 30px; height: 30px; font-size: 11px; font-weight: 700; letter-spacing: -.02em; }
-  .burbuja { border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: #fff; font-weight: 700; font-size: 16px; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.4); cursor: pointer; }
-  .leaflet-tooltip.etq { background: rgba(255,255,255,.95); border: 0; box-shadow: 0 1px 3px rgba(0,0,0,.3); font-weight: 600; font-size: 12.5px; padding: 2px 7px; color: var(--ink); }
-  .leaflet-tooltip.etq::before { display: none; }
-  .leaflet-popup-content { margin: 12px 14px; font-size: 14px; line-height: 1.45; }
-  .pop h3 { margin: 0 0 4px; font-size: 15px; }
-  .pop ul { margin: 6px 0 0; padding: 0; list-style: none; }
-  .pop li { padding: 6px 0; border-top: 1px solid var(--line); }
-  .pop small { color: var(--muted); display: block; }
-  .pop a.ir { display: inline-block; margin-top: 8px; font-weight: 600; color: var(--accent); }
-
-  .b { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: #fff; vertical-align: 1px; white-space: nowrap; }
-  .b.exp { background: var(--express); }
-  .b.self { background: var(--self); }
-  .b.no { background: #eef1f4; color: var(--muted); }
-  .b.partner { background: #fff3bf; color: #7a5b00; }
-
-  .lista { margin-top: 12px; }
-  .grupo { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; }
-  .grupo > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
-  .grupo > summary .muted { font-weight: 400; font-size: 13px; }
-  .grupo ul { list-style: none; margin: 0; padding: 0 8px 8px; }
-  .item { width: 100%; text-align: left; border: 0; background: none; padding: 8px 6px; border-radius: 8px; cursor: pointer; color: var(--ink); display: block; }
-  .item:hover:not([disabled]) { background: var(--bg); }
-  .item[disabled] { cursor: default; opacity: .75; }
-  .item .nom { font-weight: 600; margin-right: 4px; }
-  .item small { display: block; color: var(--muted); }
-
-  details.cond { margin-top: 12px; font-size: 14px; color: var(--muted); }
-  details.cond summary { cursor: pointer; color: var(--ink); font-weight: 600; }
-  footer { color: var(--muted); font-size: 12.5px; padding: 8px 0 28px; }
+  .demo .hint { margin: 8px 0 2px; color: #5a6573; }
+  .demo a { color: #0a6ebd; font-weight: 600; }
+  main { padding-bottom: 24px; }
+  footer { color: #5a6573; font-size: 12.5px; padding: 8px 0 28px; }
   #error { display: none; background: #c92a2a; color: #fff; padding: 10px 16px; font-weight: 600; }
-  @media (max-width: 560px) {
-    header h1 { font-size: 21px; }
-    .tab { padding: 9px 10px; font-size: 14px; }
-    .mapa { height: 58vh; }
-  }
+  @media (max-width: 560px) { header h1 { font-size: 21px; } }
 </style>
 </head>
 <body>
@@ -123,7 +40,7 @@
 </header>
 
 <div class="wrap">
-  <details class="demo" id="demo">
+  <details class="demo">
     <summary>Simular otro pack (solo en el PMV)</summary>
     <div class="demo-grid">
       <label>Estación
@@ -146,559 +63,59 @@
       </label>
     </div>
     <p class="hint">El bono enlazaría aquí con el pack ya puesto en la dirección: <code id="urlEjemplo"></code></p>
+    <p class="hint">¿Insertado dentro de otra web? Mira el <a href="ejemplo-embebido.html">ejemplo con el acordeón del bono</a>.</p>
   </details>
-  <nav class="tabs" id="tabs" role="tablist" aria-label="Servicios del pack"></nav>
 </div>
 
 <main class="wrap">
-  <section class="panel" id="panel-escuela" role="tabpanel" hidden>
-    <div class="card">
-      <h2>Clases colectivas</h2>
-      <ul class="puntos" id="escuelaResumen"></ul>
-    </div>
-    <div class="mapa" id="mapaEscuela" aria-label="Plano de pistas con las escuelas"></div>
-    <div class="lista" id="listaEscuela"></div>
-    <details class="cond">
-      <summary>Condiciones</summary>
-      <p>Clases en grupo de la modalidad elegida (esquí o snow) con personas de nivel parecido. El primer día se hace una prueba de nivel y se forman grupos de 12 personas como máximo.</p>
-      <p>No podemos garantizar el idioma elegido. Si necesitas un profesor en un idioma concreto, te recomendamos las clases particulares.</p>
-    </details>
-  </section>
-
-  <section class="panel" id="panel-comer" role="tabpanel" hidden>
-    <div class="card">
-      <h2 id="menuTitulo"></h2>
-      <ul class="puntos" id="menuResumen"></ul>
-    </div>
-    <div class="controles">
-      <div class="seg" role="group" aria-label="Qué restaurantes ver">
-        <button type="button" id="modoMio" aria-pressed="true">Aceptan mi menú</button>
-        <button type="button" id="modoTodos" aria-pressed="false">Todos los restaurantes</button>
-      </div>
-      <span class="muted" id="restCuenta"></span>
-    </div>
-    <div class="mapa" id="mapaComer" aria-label="Plano de pistas con los restaurantes"></div>
-    <div class="lista" id="listaComer"></div>
-    <details class="cond">
-      <summary>Condiciones</summary>
-      <p id="condMenu"></p>
-      <p>Los menús son orientativos y dependen de la oferta de cada restaurante.</p>
-      <p>Promoción exclusiva de venta anticipada: no se vende en los restaurantes de la estación.</p>
-    </details>
-  </section>
-
-  <section class="panel" id="panel-alquiler" role="tabpanel" hidden>
-    <div class="card">
-      <h2>Alquiler de material</h2>
-      <ul class="puntos">
-        <li>Recógelo en cualquiera de estas tiendas. Toca una población para ver dónde están.</li>
-        <li>Equipo completo: esquís, botas y bastones, o tabla y botas. <strong>No incluye casco.</strong></li>
-        <li>En temporada alta, reserva el material con antelación.</li>
-      </ul>
-    </div>
-    <div class="controles" id="filtroMarcas" role="group" aria-label="Filtrar por marca"></div>
-    <div class="controles"><button type="button" class="btn-link" id="verAndorra" hidden>← Ver toda Andorra</button></div>
-    <div class="mapa" id="mapaTiendas" aria-label="Mapa de Andorra con las tiendas de alquiler"></div>
-    <div class="lista" id="listaTiendas"></div>
-    <details class="cond">
-      <summary>Condiciones</summary>
-      <p>Gamas bronce, plata y oro para adultos, y bronce y plata para niños. Si quieres material de gama superior, pagas la diferencia en la tienda.</p>
-      <p>★ Partner Grandvalira Resorts.</p>
-    </details>
-  </section>
+  <!-- La página es solo un envoltorio: todo el mapa lo pinta mapa-bonos.js (el mismo script que se inserta en otras webs). -->
+  <div data-mapa-bonos data-leer-url="si"></div>
 </main>
 
-<footer class="wrap" id="pie"></footer>
+<footer class="wrap">PMV · Datos recopilados el 14-oct-2026 · Planos © Grandvalira Resorts · Mapa © colaboradores de OpenStreetMap</footer>
 
 <script>
-  function mostrarError(msg) {
-    var el = document.getElementById('error');
-    el.style.display = 'block';
-    el.textContent = 'Error: ' + msg;
-  }
-  window.addEventListener('error', function (e) { mostrarError(e.message || e); });
-  window.addEventListener('unhandledrejection', function (e) { mostrarError((e.reason && e.reason.message) || e.reason); });
+  (function () {
+    function err(msg) { var el = document.getElementById('error'); el.style.display = 'block'; el.textContent = 'Error: ' + msg; }
+    window.addEventListener('error', function (e) { err(e.message || e); });
+    window.addEventListener('unhandledrejection', function (e) { err((e.reason && e.reason.message) || e.reason); });
+
+    // Cabecera y simulador (lo que el widget no pinta).
+    var NOMBRES = { GV: 'Grandvalira', PA: 'Pal Arinsal', OA: 'Ordino Arcalís' };
+    var qs = new URLSearchParams(location.search);
+    var est = (qs.get('estacion') || 'GV').toUpperCase();
+    if (!NOMBRES[est]) est = 'GV';
+    var sp = qs.get('servicios');
+    var serv = (sp === null ? 'c,m,a' : sp).split(',').map(function (s) { return s.trim(); })
+      .filter(function (s) { return ['c', 'm', 'a'].indexOf(s) >= 0; });
+    var menu = (qs.get('menu') || 'express').toLowerCase() === 'self' && est === 'GV' ? 'self' : 'express';
+
+    document.getElementById('estNombre').textContent = NOMBRES[est];
+    var chips = [];
+    if (serv.indexOf('c') >= 0) chips.push('Clases colectivas');
+    if (serv.indexOf('m') >= 0) chips.push(menu === 'self' ? 'Menú Self' : 'Menú Express');
+    if (serv.indexOf('a') >= 0) chips.push('Alquiler de material');
+    document.getElementById('chipsPack').innerHTML = chips.map(function (c) { return '<span class="chip">' + c + '</span>'; }).join('');
+
+    function urlPack(e, s, m) {
+      var p = new URLSearchParams();
+      p.set('estacion', e); p.set('servicios', s.join(',')); p.set('menu', m);
+      return '?' + p.toString();
+    }
+    document.getElementById('dEst').value = est;
+    document.getElementById('dMenu').value = menu;
+    var cajas = document.querySelectorAll('.dServ');
+    Array.prototype.forEach.call(cajas, function (cb) { cb.checked = serv.indexOf(cb.value) >= 0; });
+    document.getElementById('urlEjemplo').textContent = (location.pathname.split('/').pop() || '') + urlPack(est, serv, menu);
+    function aplicar() {
+      var s = Array.prototype.filter.call(cajas, function (cb) { return cb.checked; }).map(function (cb) { return cb.value; });
+      location.search = urlPack(document.getElementById('dEst').value, s, document.getElementById('dMenu').value);
+    }
+    document.getElementById('dEst').addEventListener('change', aplicar);
+    document.getElementById('dMenu').addEventListener('change', aplicar);
+    Array.prototype.forEach.call(cajas, function (cb) { cb.addEventListener('change', aplicar); });
+  })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="datos.js"></script>
-<script>
-(function () {
-  'use strict';
-  var D = window.DATOS;
-
-  // ---------- Configuración por estación ----------
-  var ORDEN_TIENDAS_GV = ['Encamp', 'Encamp – Solanelles (pistas)', 'Canillo', 'El Tarter', 'Soldeu', "Bordes d'Envalira",
-    'Grau Roig', 'Pas de la Casa', 'La Massana', 'Pal', 'Arinsal', 'Ordino Arcalís'];
-  var ORDEN_TIENDAS_PA = ['La Massana', 'Pal', 'Arinsal', 'Ordino Arcalís', 'Encamp', 'Encamp – Solanelles (pistas)', 'Canillo',
-    'El Tarter', 'Soldeu', "Bordes d'Envalira", 'Grau Roig', 'Pas de la Casa'];
-  var ORDEN_TIENDAS_OA = ['Ordino Arcalís', 'La Massana', 'Pal', 'Arinsal', 'Encamp', 'Encamp – Solanelles (pistas)', 'Canillo',
-    'El Tarter', 'Soldeu', "Bordes d'Envalira", 'Grau Roig', 'Pas de la Casa'];
-  var ESTACIONES = {
-    GV: { nombre: 'Grandvalira', img: 'img/plano_GV.jpg', self: true, ordenTiendas: ORDEN_TIENDAS_GV,
-      inicio: '2 días: empiezan en sábado. 3 o más días: en lunes (en Soldeu y El Tarter, también en sábado).' },
-    PA: { nombre: 'Pal Arinsal', img: 'img/plano_PA.jpg', self: false, ordenTiendas: ORDEN_TIENDAS_PA,
-      inicio: '2 días: empiezan en sábado. 3 o más días: en lunes o en sábado.' },
-    OA: { nombre: 'Ordino Arcalís', img: 'img/plano_OA.jpg', self: false, ordenTiendas: ORDEN_TIENDAS_OA,
-      inicio: '2 días: empiezan en sábado. 3 o más días: en lunes.' }
-  };
-  // Lado de la etiqueta de cada población en el mapa de Andorra (para que no se pisen).
-  var LADO_ZONA = { 'Pas de la Casa': 'top', 'Grau Roig': 'bottom', "Bordes d'Envalira": 'right', 'Soldeu': 'top', 'El Tarter': 'left',
-    'Canillo': 'left', 'Encamp': 'bottom', 'Encamp – Solanelles (pistas)': 'left', 'La Massana': 'right', 'Pal': 'bottom',
-    'Arinsal': 'top', 'Ordino Arcalís': 'right' };
-  var NOMBRE_CORTO_ZONA = { 'Encamp – Solanelles (pistas)': 'Solanelles (en pistas)' };
-  var MARCAS = {
-    'Pic Negre': { c: '#1f1f1f', t: 'PN' }, 'Viladomat': { c: '#c62828', t: 'V' }, 'Shusski': { c: '#1565c0', t: 'S' },
-    'Esports Pirot': { c: '#e67700', t: 'EP' }, 'Skiset': { c: '#a61e4d', t: 'SK' }, 'Esports Rossell': { c: '#2b8a3e', t: 'R' },
-    'Sports Calbó': { c: '#6741d9', t: 'C' }, 'Sant Moritz': { c: '#6d4c41', t: 'SM' }
-  };
-  var ICON = {
-    flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 22V3h2v1.2l10 .1-2.6 4.2L18 13H8v9z"/></svg>',
-    fork: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h1.5v6.5h1V2H11v6.5h1V2h1.5v7.5A2.5 2.5 0 0 1 11 12v10H9V12a2.5 2.5 0 0 1-2-2.5zM18 2v20h-2v-7h-2V7c0-2.8 1.8-5 4-5z"/></svg>',
-    boot: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h7v8l5 4v4H5v-2h2zM3 20h18v2H3z"/></svg>'
-  };
-
-  // ---------- Estado (viene de la URL del bono) ----------
-  var qs = new URLSearchParams(location.search);
-  var est = (qs.get('estacion') || 'GV').toUpperCase();
-  if (!ESTACIONES[est]) est = 'GV';
-  var E = ESTACIONES[est];
-  var servParam = qs.get('servicios');
-  var serv = (servParam === null ? 'c,m,a' : servParam).split(',').map(function (s) { return s.trim(); })
-    .filter(function (s) { return ['c', 'm', 'a'].indexOf(s) >= 0; });
-  var menu = (qs.get('menu') || 'express').toLowerCase() === 'self' && E.self ? 'self' : 'express';
-  var zonaInicial = qs.get('zona');
-  var marcaInicial = qs.get('marca');
-
-  // ---------- Utilidades ----------
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-  function $(id) { return document.getElementById(id); }
-  function pinIcon(clase, contenido, numero, tam) {
-    var t = tam || 34;
-    return L.divIcon({
-      className: '', iconSize: [t, t], iconAnchor: [t / 2, t / 2], popupAnchor: [0, -t / 2], tooltipAnchor: [t / 2, 0],
-      html: '<div class="pin ' + clase + '">' + contenido + (numero ? '<b>' + numero + '</b>' : '') + '</div>'
-    });
-  }
-  function marcaInfo(m) {
-    return MARCAS[m] || { c: '#546e7a', t: String(m || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase() };
-  }
-  function comoLlegar(p) {
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lng;
-  }
-  var imgs = {};
-  function cargarImg(src) {
-    if (!imgs[src]) {
-      imgs[src] = new Promise(function (ok, ko) {
-        var i = new Image();
-        i.onload = function () { ok(i); };
-        i.onerror = function () { ko(new Error('No se pudo cargar ' + src)); };
-        i.src = src;
-      });
-    }
-    return imgs[src];
-  }
-  // Plano de pistas como mapa navegable (coordenadas en píxeles de la imagen).
-  function crearPlano(el) {
-    return cargarImg(E.img).then(function (img) {
-      var w = img.naturalWidth, h = img.naturalHeight;
-      var map = L.map(el, { crs: L.CRS.Simple, minZoom: -5, maxZoom: 1, zoomSnap: 0.25, zoomDelta: 0.5 });
-      map.attributionControl.setPrefix(false);
-      var b = L.latLngBounds([[0, 0], [h, w]]);
-      L.imageOverlay(img.src, b, { attribution: 'Plano © Grandvalira Resorts' }).addTo(map);
-      map.fitBounds(b);
-      map.setMinZoom(map.getZoom() - 0.5);
-      map.setMaxBounds(b.pad(0.15));
-      return { map: map, h: h, ll: function (x, y) { return L.latLng(h - y, x); } };
-    });
-  }
-  // Encuadre inicial del plano. En pantallas verticales (móvil) la imagen llena el alto en vez de quedar
-  // como una franja pequeña; si algún punto queda fuera, se avisa de que se puede deslizar.
-  function encuadrar(pl, pos) {
-    var map = pl.map, size = map.getSize(), b = L.latLngBounds(pos);
-    var z = Math.min(map.getBoundsZoom(b, false, L.point(80, 80)), -0.75);
-    if (size.x < size.y * 1.3) z = Math.min(Math.max(z, Math.log(size.y / pl.h) / Math.LN2), -0.75);
-    // Centro = media de los puntos; si así no se ve ninguno, se centra en el más cercano a esa media.
-    var centro = L.latLng(pos.reduce(function (s, p) { return s + p.lat; }, 0) / pos.length,
-      pos.reduce(function (s, p) { return s + p.lng; }, 0) / pos.length);
-    map.setView(centro, z, { animate: false });
-    if (!pos.some(function (p) { return map.getBounds().contains(p); })) {
-      var cerca = pos.slice().sort(function (a, c) { return centro.distanceTo(a) - centro.distanceTo(c); })[0];
-      map.setView(cerca, z, { animate: false });
-    }
-    var fuera = pos.some(function (p) { return !map.getBounds().contains(p); });
-    if (fuera) {
-      var Aviso = L.Control.extend({
-        options: { position: 'topright' },
-        onAdd: function () {
-          var d = L.DomUtil.create('div', 'aviso-mapa');
-          d.textContent = 'Desliza o aleja el plano para ver todos los puntos';
-          return d;
-        }
-      });
-      var aviso = new Aviso().addTo(map);
-      map.once('dragstart zoomstart', function () { map.removeControl(aviso); });
-    }
-  }
-
-  // ---------- Cabecera y simulador ----------
-  $('estNombre').textContent = E.nombre;
-  var chips = [];
-  if (serv.indexOf('c') >= 0) chips.push('Clases colectivas');
-  if (serv.indexOf('m') >= 0) chips.push(menu === 'self' ? 'Menú Self' : 'Menú Express');
-  if (serv.indexOf('a') >= 0) chips.push('Alquiler de material');
-  $('chipsPack').innerHTML = chips.map(function (c) { return '<span class="chip">' + esc(c) + '</span>'; }).join('');
-
-  $('dEst').value = est;
-  $('dMenu').value = menu;
-  Array.prototype.forEach.call(document.querySelectorAll('.dServ'), function (cb) { cb.checked = serv.indexOf(cb.value) >= 0; });
-  function urlPack(o) {
-    var p = new URLSearchParams();
-    p.set('estacion', o.est); p.set('servicios', o.serv.join(',')); p.set('menu', o.menu);
-    return '?' + p.toString();
-  }
-  $('urlEjemplo').textContent = location.pathname.split('/').pop() + urlPack({ est: est, serv: serv, menu: menu });
-  function aplicarDemo() {
-    var s = Array.prototype.filter.call(document.querySelectorAll('.dServ'), function (cb) { return cb.checked; })
-      .map(function (cb) { return cb.value; });
-    location.search = urlPack({ est: $('dEst').value, serv: s, menu: $('dMenu').value });
-  }
-  $('dEst').addEventListener('change', aplicarDemo);
-  $('dMenu').addEventListener('change', aplicarDemo);
-  Array.prototype.forEach.call(document.querySelectorAll('.dServ'), function (cb) { cb.addEventListener('change', aplicarDemo); });
-
-  $('pie').innerHTML = 'PMV · Datos recopilados el 14-oct-2026 · Planos © Grandvalira Resorts · Mapa © colaboradores de OpenStreetMap';
-
-  // ---------- Pestañas ----------
-  var TABS = [
-    { id: 'escuela', serv: 'c', txt: 'Escuela', icon: ICON.flag, init: initEscuela },
-    { id: 'comer', serv: 'm', txt: 'Dónde comer', icon: ICON.fork, init: initComer },
-    { id: 'alquiler', serv: 'a', txt: 'Alquiler', icon: ICON.boot, init: initAlquiler }
-  ].filter(function (t) { return serv.indexOf(t.serv) >= 0; });
-  var mapas = {};
-  var iniciados = {};
-  function mostrar(id) {
-    TABS.forEach(function (t) {
-      var activo = t.id === id;
-      $('tab-' + t.id).setAttribute('aria-selected', activo ? 'true' : 'false');
-      $('panel-' + t.id).hidden = !activo;
-      if (activo) {
-        if (!iniciados[t.id]) { iniciados[t.id] = true; Promise.resolve().then(t.init); }
-        else if (mapas[t.id]) mapas[t.id].invalidateSize();
-      }
-    });
-  }
-  $('tabs').innerHTML = TABS.map(function (t) {
-    return '<button class="tab" role="tab" id="tab-' + t.id + '" aria-controls="panel-' + t.id + '" type="button">' + t.icon + esc(t.txt) + '</button>';
-  }).join('');
-  TABS.forEach(function (t) { $('tab-' + t.id).addEventListener('click', function () { mostrar(t.id); }); });
-  if (!TABS.length) {
-    $('tabs').innerHTML = '<p class="muted">Este pack no incluye clases, menú ni alquiler.</p>';
-  } else {
-    var pedida = qs.get('ver');
-    mostrar(TABS.some(function (t) { return t.id === pedida; }) ? pedida : TABS[0].id);
-  }
-
-  // ---------- Escuela ----------
-  function initEscuela() {
-    $('escuelaResumen').innerHTML = [
-      '3 horas de clase al día, en grupos de nivel parecido (máximo 12 personas).',
-      E.inicio,
-      'Toca un punto del plano para ver la escuela de cada sector.'
-    ].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
-    var escuelas = D.puntos.filter(function (p) { return p.tipo === 'escuela' && p.est === est; });
-    return crearPlano($('mapaEscuela')).then(function (pl) {
-      mapas.escuela = pl.map;
-      var marc = {}, pos = [];
-      escuelas.forEach(function (p) {
-        var n = D.nucleos[p.nucleo];
-        if (!n) return;
-        var ll = pl.ll(n.x, n.y);
-        pos.push(ll);
-        marc[p.id] = L.marker(ll, { icon: pinIcon('escuela', ICON.flag), title: p.nombre }).addTo(pl.map)
-          .bindTooltip(esc(p.zona), { permanent: true, direction: 'right', className: 'etq', offset: [4, 0] })
-          .bindPopup('<div class="pop"><h3>' + esc(p.nombre) + '</h3><small>' + esc(p.ubic) + '</small><p style="margin:6px 0 0">' + esc(p.nota) + '</p></div>');
-      });
-      if (pos.length) encuadrar(pl, pos);
-      $('listaEscuela').innerHTML = '<div class="grupo"><ul>' + escuelas.map(function (p) {
-        return '<li><button type="button" class="item" data-id="' + esc(p.id) + '"><span class="nom">' + esc(p.nombre) +
-          '</span><small>' + esc(p.ubic) + ' · ' + esc(p.nota) + '</small></button></li>';
-      }).join('') + '</ul></div>';
-      Array.prototype.forEach.call($('listaEscuela').querySelectorAll('.item'), function (b) {
-        b.addEventListener('click', function () {
-          var m = marc[b.getAttribute('data-id')];
-          if (!m) return;
-          $('mapaEscuela').scrollIntoView({ behavior: 'smooth', block: 'center' });
-          pl.map.flyTo(m.getLatLng(), Math.max(pl.map.getZoom(), -0.5));
-          m.openPopup();
-        });
-      });
-    });
-  }
-
-  // ---------- Dónde comer ----------
-  function acepta(p) { return menu === 'self' ? (p.self || p.express) : p.express; }
-  function etiqueta(p) {
-    if (menu === 'self') {
-      if (p.self) return '<span class="b self">Self</span>';
-      if (p.express) return '<span class="b exp">Express (canje)</span>';
-    } else if (p.express) {
-      return '<span class="b exp">Express</span>';
-    }
-    return '<span class="b no">No acepta tu menú</span>';
-  }
-  function initComer() {
-    $('menuTitulo').textContent = menu === 'self' ? 'Tu menú: Self Service' : 'Tu menú: Express';
-    $('menuResumen').innerHTML = (menu === 'self' ? [
-      'Entrante, plato principal con guarnición, postre y bebida (agua, refresco o cerveza).',
-      'Niños: plato combinado, postre y agua o refresco.',
-      'También puedes cambiarlo por un menú Express (sin reembolso).'
-    ] : [
-      'Bocadillo con patatas fritas y una bebida (agua o refresco de 300 cc).',
-      'En algunos restaurantes el plato cambia (pasta, pizza…): lo verás al tocar cada punto.'
-    ]).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
-    $('condMenu').textContent = menu === 'self'
-      ? 'El menú Self se puede sustituir por un menú Express, sin reembolso de la diferencia.'
-      : 'La bebida es agua o refresco de 300 cc; no incluye vino ni aguas con sabor.';
-
-    var rest = D.puntos.filter(function (p) { return p.tipo === 'restaurante' && p.est === est; });
-    var modo = 'mio';
-    return crearPlano($('mapaComer')).then(function (pl) {
-      mapas.comer = pl.map;
-      var capa = L.layerGroup().addTo(pl.map);
-      var marcHub = {};
-      var primeraVez = true;
-
-      function pintar() {
-        capa.clearLayers();
-        marcHub = {};
-        var porHub = {};
-        rest.forEach(function (p) {
-          if (p.nucleo && D.nucleos[p.nucleo]) (porHub[p.nucleo] = porHub[p.nucleo] || []).push(p);
-        });
-        var pos = [];
-        Object.keys(porHub).forEach(function (hid) {
-          var lista = porHub[hid];
-          var ok = lista.filter(acepta);
-          if (modo === 'mio' && !ok.length) return;
-          var visibles = modo === 'mio' ? ok : lista.slice().sort(function (a, b) { return acepta(b) - acepta(a); });
-          var n = D.nucleos[hid];
-          var clase = ok.length ? (menu === 'self' && ok.some(function (p) { return p.self; }) ? 'rest selfm' : 'rest') : 'rest no';
-          var html = '<div class="pop"><h3>' + esc(n.nombre) + '</h3><ul>' + visibles.map(function (p) {
-            return '<li><strong>' + esc(p.nombre) + '</strong> ' + etiqueta(p) + '<small>' +
-              esc([p.local, acepta(p) ? p.nota : ''].filter(Boolean).join(' · ')) + '</small></li>';
-          }).join('') + '</ul></div>';
-          var ll = pl.ll(n.x, n.y);
-          pos.push(ll);
-          marcHub[hid] = L.marker(ll, { icon: pinIcon(clase, ICON.fork, ok.length || ''), zIndexOffset: ok.length ? 500 : 0, title: n.nombre })
-            .bindPopup(html, { maxWidth: 300 }).addTo(capa);
-        });
-        if (primeraVez && pos.length) {
-          encuadrar(pl, pos);
-          primeraVez = false;
-        }
-        var nOk = rest.filter(acepta).length;
-        $('restCuenta').textContent = nOk + ' restaurantes aceptan tu menú';
-        pintarLista();
-      }
-
-      function pintarLista() {
-        var visibles = rest.filter(function (p) { return modo === 'todos' || acepta(p); });
-        var zonas = [];
-        visibles.forEach(function (p) { if (zonas.indexOf(p.zona) < 0) zonas.push(p.zona); });
-        $('listaComer').innerHTML = zonas.map(function (z) {
-          var items = visibles.filter(function (p) { return p.zona === z; });
-          return '<details class="grupo"' + (zonas.length <= 3 ? ' open' : '') + '><summary>' + esc(z) +
-            ' <span class="muted">' + items.length + '</span></summary><ul>' + items.map(function (p) {
-              var sin = !(p.nucleo && marcHub[p.nucleo]);
-              return '<li><button type="button" class="item" data-hub="' + esc(p.nucleo) + '"' + (sin ? ' disabled' : '') + '>' +
-                '<span class="nom">' + esc(p.nombre) + '</span>' + etiqueta(p) + '<small>' +
-                esc([p.ubic, acepta(p) ? p.nota : p.local].filter(Boolean).join(' · ')) +
-                (sin ? ' · <i>todavía sin ubicar en el plano</i>' : '') + '</small></button></li>';
-            }).join('') + '</ul></details>';
-        }).join('');
-        Array.prototype.forEach.call($('listaComer').querySelectorAll('.item:not([disabled])'), function (b) {
-          b.addEventListener('click', function () {
-            var m = marcHub[b.getAttribute('data-hub')];
-            if (!m) return;
-            $('mapaComer').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            pl.map.flyTo(m.getLatLng(), Math.max(pl.map.getZoom(), -0.5));
-            m.openPopup();
-          });
-        });
-      }
-
-      function setModo(m) {
-        modo = m;
-        $('modoMio').setAttribute('aria-pressed', m === 'mio' ? 'true' : 'false');
-        $('modoTodos').setAttribute('aria-pressed', m === 'todos' ? 'true' : 'false');
-        pintar();
-      }
-      $('modoMio').addEventListener('click', function () { setModo('mio'); });
-      $('modoTodos').addEventListener('click', function () { setModo('todos'); });
-      pintar();
-    });
-  }
-
-  // ---------- Alquiler ----------
-  function initAlquiler() {
-    var tiendas = D.puntos.filter(function (p) { return p.tipo === 'tienda'; });
-    var conteo = {};
-    tiendas.forEach(function (p) { conteo[p.marca] = (conteo[p.marca] || 0) + 1; });
-    var principales = Object.keys(conteo).filter(function (m) { return conteo[m] >= 2; })
-      .sort(function (a, b) { return conteo[b] - conteo[a]; });
-    var marcaSel = marcaInicial && (principales.indexOf(marcaInicial) >= 0 || marcaInicial === 'Otras') ? marcaInicial : 'Todas';
-    function pasaFiltro(p) {
-      if (marcaSel === 'Todas') return true;
-      if (marcaSel === 'Otras') return principales.indexOf(p.marca) < 0;
-      return p.marca === marcaSel;
-    }
-
-    $('filtroMarcas').innerHTML = ['Todas'].concat(principales, ['Otras']).map(function (m) {
-      var n = m === 'Todas' ? tiendas.length : m === 'Otras'
-        ? tiendas.filter(function (p) { return principales.indexOf(p.marca) < 0; }).length : conteo[m];
-      var dot = MARCAS[m] ? '<i style="background:' + MARCAS[m].c + '"></i>' : '';
-      return '<button type="button" class="filtro" data-marca="' + esc(m) + '">' + dot + esc(m) + ' <span class="muted">' + n + '</span></button>';
-    }).join('');
-
-    var map = L.map('mapaTiendas', { zoomSnap: 0.5 });
-    mapas.alquiler = map;
-    // Teselas sin clave para el PMV (OSM France, estilo HOT). En producción: proveedor con clave (MapTiler, Stadia…).
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      subdomains: 'abc', maxZoom: 19,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · estilo HOT, <a href="https://www.openstreetmap.fr/">OSM France</a>'
-    }).addTo(map);
-    var UMBRAL = 14;
-    var ESTRECHO = $('mapaTiendas').clientWidth < 560;
-    var TAM_BURBUJA = ESTRECHO ? 34 : 44;
-    var capaZonas = L.layerGroup(), capaPins = L.layerGroup();
-    var marcTienda = {}, zonas = {}, burbujas = [];
-    var todas = L.latLngBounds(tiendas.filter(function (p) { return p.lat != null; }).map(function (p) { return [p.lat, p.lng]; }));
-
-    function irAZona(z) {
-      var o = zonas[z];
-      if (!o || !o.bounds) return;
-      map.flyToBounds(o.bounds, { padding: [50, 50], maxZoom: 17, duration: 0.8 });
-      map.once('moveend', function () { if (map.getZoom() < UMBRAL) map.setZoom(UMBRAL); });
-    }
-
-    function pintar() {
-      capaZonas.clearLayers(); capaPins.clearLayers(); marcTienda = {}; zonas = {}; burbujas = [];
-      var vis = tiendas.filter(pasaFiltro);
-      vis.forEach(function (p) {
-        var o = zonas[p.zona] = zonas[p.zona] || { items: [], marcas: {} };
-        o.items.push(p);
-        o.marcas[p.marca] = (o.marcas[p.marca] || 0) + 1;
-      });
-      Object.keys(zonas).forEach(function (z) {
-        var o = zonas[z];
-        var con = o.items.filter(function (p) { return p.lat != null; });
-        if (!con.length) return;
-        o.bounds = L.latLngBounds(con.map(function (p) { return [p.lat, p.lng]; }));
-        var lat = con.reduce(function (s, p) { return s + p.lat; }, 0) / con.length;
-        var lng = con.reduce(function (s, p) { return s + p.lng; }, 0) / con.length;
-        var off = TAM_BURBUJA / 2 - 2, lado = LADO_ZONA[z] || 'right';
-        var burbuja = L.marker([lat, lng], {
-          icon: L.divIcon({ className: '', iconSize: [TAM_BURBUJA, TAM_BURBUJA], iconAnchor: [TAM_BURBUJA / 2, TAM_BURBUJA / 2], tooltipAnchor: [0, 0],
-            html: '<div class="burbuja" style="width:' + TAM_BURBUJA + 'px;height:' + TAM_BURBUJA + 'px">' + o.items.length + '</div>' }),
-          title: z, keyboard: true, zIndexOffset: o.items.length * 10
-        }).bindTooltip(esc(NOMBRE_CORTO_ZONA[z] || z), { permanent: true, direction: lado, className: 'etq',
-          offset: lado === 'top' ? [0, -off] : lado === 'bottom' ? [0, off] : lado === 'left' ? [-off, 0] : [off, 0] })
-          .on('click', function () { irAZona(z); }).addTo(capaZonas);
-        burbujas.push({ m: burbuja, n: o.items.length });
-        con.forEach(function (p) {
-          var mi = marcaInfo(p.marca);
-          var html = '<div class="pop"><h3>' + esc(p.nombre) + '</h3><small>' + esc([p.ubic, p.dir].filter(Boolean).join(' · ')) + '</small>' +
-            (p.partner ? '<p style="margin:6px 0 0"><span class="b partner">★ Partner Grandvalira Resorts</span></p>' : '') +
-            (p.nota ? '<p style="margin:6px 0 0">' + esc(p.nota) + '</p>' : '') +
-            '<a class="ir" href="' + comoLlegar(p) + '" target="_blank" rel="noopener">Cómo llegar →</a></div>';
-          marcTienda[p.id] = L.marker([p.lat, p.lng], {
-            icon: L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14],
-              html: '<div class="pin tienda" style="background:' + mi.c + '">' + esc(mi.t) + '</div>' }),
-            title: p.nombre
-          }).bindPopup(html, { maxWidth: 280 }).addTo(capaPins);
-        });
-      });
-      Array.prototype.forEach.call(document.querySelectorAll('#filtroMarcas .filtro'), function (b) {
-        b.setAttribute('aria-pressed', b.getAttribute('data-marca') === marcaSel ? 'true' : 'false');
-      });
-      capas();
-      pintarLista();
-    }
-
-    function capas() {
-      var cerca = map.getZoom() >= UMBRAL;
-      if (cerca) { map.removeLayer(capaZonas); capaPins.addTo(map); }
-      else { map.removeLayer(capaPins); capaZonas.addTo(map); despejarEtiquetas(); }
-      $('verAndorra').hidden = !cerca;
-    }
-
-    // Oculta las etiquetas de población que se pisan (gana la población con más tiendas).
-    function despejarEtiquetas() {
-      var cajas = burbujas.map(function (o) {
-        var e = o.m.getElement();
-        return { m: o.m, r: e ? e.getBoundingClientRect() : null };
-      }).filter(function (c) { return c.r; });
-      var puestas = [];
-      function choca(r, q) { return r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; }
-      burbujas.slice().sort(function (a, b) { return b.n - a.n; }).forEach(function (o) {
-        var t = o.m.getTooltip(), el = t && t.getElement();
-        if (!el) return;
-        el.style.visibility = 'visible';
-        var r = el.getBoundingClientRect();
-        var mal = puestas.some(function (q) { return choca(r, q); }) ||
-          cajas.some(function (c) { return c.m !== o.m && choca(r, c.r); });
-        if (mal) el.style.visibility = 'hidden'; else puestas.push(r);
-      });
-    }
-    map.on('resize', function () { if (map.hasLayer(capaZonas)) despejarEtiquetas(); });
-
-    function pintarLista() {
-      var orden = E.ordenTiendas.filter(function (z) { return zonas[z]; });
-      $('listaTiendas').innerHTML = orden.map(function (z) {
-        var o = zonas[z];
-        var resumen = Object.keys(o.marcas).sort(function (a, b) { return o.marcas[b] - o.marcas[a]; })
-          .map(function (m) { return m + (o.marcas[m] > 1 ? ' ×' + o.marcas[m] : ''); }).join(' · ');
-        return '<details class="grupo"><summary><span>' + esc(z) + '</span><span class="muted">' + o.items.length + ' · ' + esc(resumen) +
-          '</span></summary><ul>' + o.items.map(function (p) {
-            var sin = p.lat == null;
-            return '<li><button type="button" class="item" data-id="' + esc(p.id) + '"' + (sin ? ' disabled' : '') + '><span class="nom">' + esc(p.nombre) + '</span>' +
-              (p.partner ? '<span class="b partner">★ Partner</span>' : '') + '<small>' + esc([p.ubic, p.dir].filter(Boolean).join(' · ')) +
-              (sin ? ' · <i>todavía sin ubicar</i>' : '') + '</small></button></li>';
-          }).join('') + '</ul></details>';
-      }).join('');
-      Array.prototype.forEach.call($('listaTiendas').querySelectorAll('details.grupo'), function (d, i) {
-        d.addEventListener('toggle', function () { if (d.open) irAZona(orden[i]); });
-      });
-      Array.prototype.forEach.call($('listaTiendas').querySelectorAll('.item:not([disabled])'), function (b) {
-        b.addEventListener('click', function () {
-          var m = marcTienda[b.getAttribute('data-id')];
-          if (!m) return;
-          $('mapaTiendas').scrollIntoView({ behavior: 'smooth', block: 'center' });
-          map.flyTo(m.getLatLng(), 18, { duration: 0.8 });
-          map.once('moveend', function () { m.openPopup(); });
-        });
-      });
-    }
-
-    Array.prototype.forEach.call(document.querySelectorAll('#filtroMarcas .filtro'), function (b) {
-      b.addEventListener('click', function () { marcaSel = b.getAttribute('data-marca'); pintar(); });
-    });
-    var MARGEN = ESTRECHO ? { padding: [22, 22] } : { paddingTopLeft: [60, 50], paddingBottomRight: [70, 50] };
-    $('verAndorra').addEventListener('click', function () { map.flyToBounds(todas, L.extend({ duration: 0.8 }, MARGEN)); });
-    map.on('zoomend', capas);
-    map.fitBounds(todas, MARGEN);
-    pintar();
-    if (zonaInicial && zonas[zonaInicial]) {
-      var o = zonas[zonaInicial];
-      map.fitBounds(o.bounds, { padding: [50, 50], maxZoom: 17 });
-      if (map.getZoom() < UMBRAL) map.setZoom(UMBRAL);
-    }
-  }
-})();
-</script>
+<script src="mapa-bonos.js"></script>
 </body>
 </html>

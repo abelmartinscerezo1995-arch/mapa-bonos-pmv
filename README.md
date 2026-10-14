@@ -6,6 +6,20 @@ Sustituye el texto largo de los bonos (escuela, restaurantes con contramarca y t
 - **Alquiler:** mapa de Andorra con una burbuja por población; al tocarla, el mapa se acerca y muestra cada tienda con su enlace "Cómo llegar".
 - Solo aparecen las pestañas de los servicios que incluye el pack.
 
+## Dos versiones, un solo código
+
+Todo el mapa lo pinta `mapa-bonos.js`. Se usa de dos formas:
+
+1. **Web propia** (`index.html`): una página con cabecera que lee el pack de la dirección.
+2. **Insertado en otra web** (la de Grandvalira, el bono, un CMS…): se pega un `<div>` donde se quiera el mapa y se carga el script una vez. Ver `ejemplo-embebido.html`, que es el acordeón actual del bono con los mapas dentro.
+
+```html
+<div data-mapa-bonos data-estacion="GV" data-servicios="a"></div>
+<script src="https://abelmartinscerezo1995-arch.github.io/mapa-bonos-pmv/mapa-bonos.js" defer></script>
+```
+
+Atributos del `<div>`: `data-estacion`, `data-servicios`, `data-menu`, `data-ver`, `data-zona`, `data-marca` (igual que los parámetros de abajo), y además `data-resumen="no"` / `data-condiciones="no"` para ocultar los textos, `data-alto="480px"` para el alto del mapa y `data-leer-url="si"` para tomar el pack de la dirección de la página. Con un solo servicio no se muestran pestañas. El script carga Leaflet si la web no lo tiene, usa clases con prefijo `mb-` para no chocar con los estilos de la web y funciona dentro de acordeones o pestañas cerradas. También se puede montar desde JS: `MapaBonos.montar(elemento, { estacion: 'PA', servicios: 'a' })`.
+
 ## Cómo se abre
 
 Es una página estática: basta con abrir `index.html` en el navegador (necesita internet para Leaflet y el mapa de fondo) o publicarla en GitHub Pages.
@@ -40,7 +54,9 @@ Requisitos de los scripts: Python 3 con `openpyxl`, `pymupdf` y `Pillow`.
 ## Estructura
 
 ```
-index.html                  página (HTML + CSS + JS, sin dependencias de compilación)
+mapa-bonos.js               el mapa (widget): todo el JS y CSS, sin dependencias de compilación
+index.html                  versión web: cabecera + simulador + el widget
+ejemplo-embebido.html       ejemplo: el acordeón del bono con el widget dentro (ejemplo/bono.css = estilos del bono)
 datos.js                    datos generados desde el Excel (no editar a mano)
 img/plano_GV|PA|OA.jpg      planos oficiales 25-26 recortados (sin leyenda), 3200 px de ancho
 herramientas/               scripts que generan datos.js y las imágenes
