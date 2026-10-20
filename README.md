@@ -47,7 +47,7 @@ Después: **doble clic en `Actualizar mapa.bat`**. Revisa el Excel, explica cual
 
 1. Deja los PDF nuevos en `mapa_bonos/planos/` con el nombre `Plano GV 26-27.pdf` (y PA, OA).
 2. En `herramientas/generar_planos.py` cambia `TEMPORADA = "26-27"` y ejecútalo (tarda ~1 minuto). Crea `planos/GV-2627/…` sin borrar la temporada anterior.
-3. Si el plano ha cambiado de dibujo, revisa las X/Y de la hoja **Núcleos plano** (abre el mapa con `?debug=1` para ver qué falta).
+3. Si el plano ha cambiado de dibujo, revisa las X/Y de la hoja **Núcleos plano**. Los puntos sin posición salen en la lista con «Aún no está en el plano».
 4. `Actualizar mapa.bat`.
 
 ## Publicarlo en tu servidor

@@ -33,7 +33,7 @@ Fallos concretos de la v0.2 (todos corregidos):
 5. **Burbujas y tiendas amontonadas** (El Tarter / Soldeu; 15 tiendas en Pas de la Casa). Ahora se separan y las etiquetas buscan sitio libre.
 6. **Dentro de otra web el mapa "atrapaba" el dedo** al hacer scroll. Ahora, metido en otra web, se mueve con dos dedos (con uno baja la página) y en ordenador hace zoom con Ctrl + rueda, como Google Maps.
 7. **Variable global `window.DATOS`**: podía chocar con la web de Grandvalira. Ahora es `MAPA_BONOS_DATOS`.
-8. **Puntos sin ubicar** se mostraban al cliente como "todavía sin ubicar". Ahora salen en la lista sin ese aviso (con `?debug=1` se ve para revisar).
+8. **Puntos sin ubicar:** salen en la lista con «Aún no está en el plano» (en el idioma del cliente) y desaparece en cuanto tienen posición en el Excel.
 9. El recuadro "Simular otro pack" lo veía el cliente. Ahora está en una herramienta aparte: `generador.html`.
 
 ## 3. Comparativa con otros mapas interactivos
@@ -68,7 +68,7 @@ Qué aprendemos:
 - **4 idiomas** (ES, CA, FR, EN): por defecto el del móvil del cliente; se puede forzar con `l=`. Todos los textos están en el Excel (hojas **Textos** y **Frases**), con la redacción oficial de los bonos.
 - **Planos en teselas WebP** generadas desde los PDF oficiales, nítidos en pantallas de alta densidad.
 - **Tiendas:** filtro por sector (**Grandvalira / Nord Pass**) con el color del sector en burbujas y pines; burbuja por población → tiendas una a una al acercarse; lista por sector y población; **"Cerca de mí"** (ordena por distancia, solo si el cliente da permiso); "Cómo llegar" con Google Maps. En el móvil empieza encuadrado en el lado de su estación.
-- **Restaurantes:** filtros **Menú Express / Menú Self / Todos** (Self solo en Grandvalira; empieza en el menú del pack; con Self también salen los Express donde se canjea), leyenda de colores y resumen del menú elegido.
+- **Restaurantes:** filtros **Menú Express / Menú Self / Todos** (Self solo en Grandvalira; empieza en el menú del pack; cada filtro enseña solo los restaurantes de ese menú; que el Self se pueda cambiar por un Express va en Condiciones), leyenda de colores y resumen del menú elegido.
 - **Comprobación del Excel** antes de publicar (IDs repetidos, núcleos que no existen, coordenadas fuera de Andorra, traducciones que faltan, `{n}` borrados…).
 - **`generador.html`:** enlace corto, QR (SVG para imprenta / PNG), código iframe y script para cada pack, vista previa y tabla con todos los packs.
 - **`Actualizar mapa.bat`:** doble clic → revisa el Excel → regenera → abre la vista previa → publica si dices que sí.

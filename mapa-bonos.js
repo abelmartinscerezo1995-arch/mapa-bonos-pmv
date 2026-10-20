@@ -732,7 +732,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
       lista.innerHTML = `<div class="mb-grupo"><ul class="mb-items">${escuelas.map(p => {
         const ok = p.nucleo && D.nucleos[p.nucleo];
         return `<li><button type="button" class="mb-item" data-id="${esc(p.id)}"${ok ? '' : ' disabled'}><span class="mb-nom">${esc(tr(p.nombre))}</span>
-          <small>${esc([tr(p.ubic), tr(p.nota)].filter(Boolean).join(' · '))}</small></button></li>`;
+          <small>${esc([tr(p.ubic), tr(p.nota)].filter(Boolean).join(' · '))}${ok ? '' : ` · <i>${esc(t('mapa.sin_ubicar'))}</i>`}</small></button></li>`;
       }).join('')}</ul></div>`;
       function ficha(p) {
         P.ficha(`<h3>${esc(tr(p.nombre))}</h3><p class="mb-sec">${esc(tr(p.ubic))}</p>${p.nota ? `<p>${esc(tr(p.nota))}</p>` : ''}`,
@@ -769,18 +769,27 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
 
     // ----- Dónde comer -----
     // Filtros: Menú Express · Menú Self (solo donde existe) · Todos. Empieza en el menú del pack.
-    // Con el menú Self también valen los restaurantes Express (se canjea el Self por un Express).
+    // Cada filtro enseña solo los restaurantes de ese menú. Que el Self se pueda cambiar por un Express
+    // es una condición del producto: va en "Condiciones", no en el mapa.
     function initComer(P, I) {
       const { t, tr } = I;
       const rest = D.puntos.filter(p => p.tipo === 'restaurante' && p.est === o.est);
       const MODOS = E.self ? ['express', 'self', 'todos'] : ['express', 'todos'];
-      const acepta = (p, m) => (m === 'self' ? (p.self || p.express) : m === 'express' ? p.express : true);
+      const acepta = (p, m) => (m === 'self' ? p.self : m === 'express' ? p.express : true);
       const tieneMenu = p => p.express || (E.self && p.self);
+      // "En algunos restaurantes el plato cambia": solo si en esta estación hay menús Express con platos distintos.
+      const platoVaria = new Set(rest.filter(p => p.express).map(p => p.nota)).size > 1;
+      // Qué incluye en cada restaurante. La nota del Excel es la del menú Express; con el filtro Self se enseña la del Self
+      // (la más repetida entre los restaurantes solo Self), también en los que aceptan los dos menús.
+      const frecuencias = {};
+      rest.filter(p => p.self && !p.express && p.nota).forEach(p => { frecuencias[p.nota] = (frecuencias[p.nota] || 0) + 1; });
+      const notaSelf = Object.keys(frecuencias).sort((a, b) => frecuencias[b] - frecuencias[a])[0] || '';
+      const queIncluye = p => (modo === 'self' ? notaSelf : tieneMenu(p) ? p.nota : '');
       let modo = o.menu, pl = null, capa = null, marcHub = {}, primeraVez = true;
       const pos = [];
       const badge = (clase, clave) => `<span class="mb-b ${clase}">${esc(t(clave))}</span>`;
       const etiqueta = p => {
-        if (modo === 'self') return p.self ? badge('self', 'comer.badge.self') : badge('exp', 'comer.badge.canje');
+        if (modo === 'self') return badge('self', 'comer.badge.self');
         if (modo === 'express') return badge('exp', 'comer.badge.express');
         const b = (p.express ? badge('exp', 'comer.badge.express') : '') + (E.self && p.self ? badge('self', 'comer.badge.self') : '');
         return b || badge('no', 'comer.badge.ninguno');
@@ -790,7 +799,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
       function pintarResumen() {
         const m = modo === 'todos' ? o.menu : modo;
         const titulo = m === o.menu ? t(m === 'self' ? 'comer.titulo.self' : 'comer.titulo.express') : t(m === 'self' ? 'chip.self' : 'chip.express');
-        P.q('tarjeta').innerHTML = tarjeta(titulo, m === 'self' ? [t('comer.self.p1'), t('comer.self.p2'), t('comer.self.p3')] : [t('comer.express.p1'), t('comer.express.p2')]);
+        P.q('tarjeta').innerHTML = tarjeta(titulo, m === 'self' ? [t('comer.self.p1'), t('comer.self.p2')] : [t('comer.express.p1'), platoVaria ? t('comer.express.p2') : '']);
         P.q('cond').innerHTML = [t(m === 'self' ? 'comer.cond.self' : 'comer.cond.express'), t('comer.cond2'), t('comer.cond3')].map(c => `<p>${fmt(c)}</p>`).join('');
         const n = rest.filter(p => acepta(p, modo)).length;
         const rn = P.q('resumen-n');
@@ -802,7 +811,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         rest.filter(p => acepta(p, m)).length}</span></button>`).join('') + '<span class="mb-sep"></span><span class="mb-leyenda" data-r="leyenda" aria-hidden="true"></span>';
       function pintarLeyenda() {
         const item = (color, txt) => `<span><i style="background:var(${color})"></i>${esc(txt)}</span>`;
-        P.q('leyenda').innerHTML = (modo !== 'express' && E.self ? item('--mb-self', 'Self') : '') + item('--mb-express', 'Express') +
+        P.q('leyenda').innerHTML = (modo !== 'express' && E.self ? item('--mb-self', 'Self') : '') + (modo !== 'self' ? item('--mb-express', 'Express') : '') +
           (modo === 'todos' ? item('--mb-no', t('comer.leyenda.otros')) : '');
       }
       function fichaHub(hid, resaltar) {
@@ -810,7 +819,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         const peso = p => (tieneMenu(p) ? 2 : 0) + (modo !== 'express' && p.self ? 1 : 0);
         const lista = rest.filter(p => p.nucleo === hid && acepta(p, modo)).sort((a, b) => peso(b) - peso(a));
         P.ficha(`<h3>${esc(tr(n.nombre))}</h3><ul>${lista.map(p => `<li${p.id === resaltar ? ' class="mb-marcado"' : ''}>
-          <strong>${esc(p.nombre)}</strong>${etiqueta(p)}<small class="mb-sec">${esc([tr(p.local), tieneMenu(p) ? tr(p.nota) : ''].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>`,
+          <strong>${esc(p.nombre)}</strong>${etiqueta(p)}<small class="mb-sec">${esc([tr(p.local), tr(queIncluye(p))].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>`,
           () => marcar(marcHub[hid], false));
         marcar(marcHub[hid], true);
         const m = P.q('ficha').querySelector('.mb-marcado');
@@ -846,8 +855,8 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
           return `<div class="mb-grupo"><h3 class="mb-grupo-tit"><span>${esc(tr(z))}</span><span>${items.length}</span></h3><ul class="mb-items">${items.map(p => {
             const ok = p.nucleo && D.nucleos[p.nucleo];
             return `<li><button type="button" class="mb-item" data-hub="${esc(p.nucleo)}" data-id="${esc(p.id)}"${ok ? '' : ' disabled'}>
-              <span class="mb-nom">${esc(p.nombre)}</span>${etiqueta(p)}<small>${esc([tr(p.ubic), tieneMenu(p) ? tr(p.nota) : tr(p.local)].filter(Boolean).join(' · '))}${
-                !ok && o.debug ? ' · <i>sin núcleo en el plano</i>' : ''}</small></button></li>`;
+              <span class="mb-nom">${esc(p.nombre)}</span>${etiqueta(p)}<small>${esc([tr(p.ubic), tieneMenu(p) ? tr(queIncluye(p)) : tr(p.local)].filter(Boolean).join(' · '))}${
+                !ok ? ` · <i>${esc(t('mapa.sin_ubicar'))}</i>` : ''}</small></button></li>`;
           }).join('')}</ul></div>`;
         }).join('');
         P.cuenta(visibles.length);
@@ -1020,7 +1029,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         const d = conDist && yo && !sin ? `<span class="mb-dist">${esc(I.dist(distanciaM(yo, [p.lat, p.lng])))}</span>` : '';
         return `<li><button type="button" class="mb-item" data-id="${esc(p.id)}"${sin ? ' disabled' : ''}>${d}<span class="mb-nom">${esc(p.nombre)}</span>${
           p.partner ? '<span class="mb-b partner">★ Partner</span>' : ''}<small>${esc([conDist ? nombreZona(p.zona) : '', tr(p.ubic), p.dir].filter(Boolean).join(' · '))}${
-          sin && o.debug ? ' · <i>sin posición</i>' : ''}</small></button></li>`;
+          sin ? ` · <i>${esc(t('mapa.sin_ubicar'))}</i>` : ''}</small></button></li>`;
       }
       function pintarLista() {
         const visibles = tiendas.filter(pasa);
