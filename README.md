@@ -24,7 +24,7 @@ Parámetros del enlace (forma corta / larga):
 | `l` / `lang` | `es`, `ca`, `fr`, `en` | el del móvil |
 | `v` / `ver` | pestaña inicial: `escuela`, `comer`, `alquiler` | la primera |
 | `z` / `zona` | abre las tiendas acercado a una población (`Pas de la Casa`) | — |
-| `b` / `marca` | filtra las tiendas por marca (`Pic Negre`) | — |
+| `sector` | tiendas de un sector: `GV` (Grandvalira) o `NP` (Nord Pass = Pal Arinsal + Ordino Arcalís) | todas |
 
 ## Verlo en tu ordenador
 
@@ -34,7 +34,7 @@ Doble clic en `index.html` (o en `generador.html`). Hace falta internet solo par
 
 Todo sale del Excel **`Puntos mapa bonos.xlsx`** (carpeta `mapa_bonos`, fuera de este repositorio porque tiene comentarios internos):
 
-- **Puntos:** una fila por escuela, restaurante o tienda.
+- **Puntos:** una fila por escuela, restaurante o tienda. La columna *Sector (GV / NP)* decide en qué sector sale cada tienda (filtro y color del mapa de alquiler).
 - **Núcleos plano:** posición (X/Y en píxeles) de cada núcleo sobre el plano de pistas.
 - **Textos:** todos los textos del mapa en ES / CA / FR / EN. No toques la columna *Clave* ni los `{n}`. `**texto**` sale en negrita.
 - **Frases:** traducción de lo que pone en Puntos (qué incluye, tipo de local, ubicación).

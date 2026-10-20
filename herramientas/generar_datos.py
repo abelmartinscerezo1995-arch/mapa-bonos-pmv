@@ -19,6 +19,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXCEL = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, "..", "Puntos mapa bonos.xlsx")
 IDIOMAS = ["es", "ca", "fr", "en"]
 ESTACIONES = {"GV", "PA", "OA"}
+SECTORES = {"GV", "NP"}  # GV = Grandvalira; NP = Nord Pass (Pal Arinsal + Ordino Arcalís)
 TIPOS = {"Escuela": "escuela", "Restaurante": "restaurante", "Tienda": "tienda"}
 ANDORRA = (42.40, 42.70, 1.38, 1.80)  # lat mín, lat máx, lng mín, lng máx
 
@@ -94,7 +95,12 @@ for n_fila, f in enumerate(filas, start=2):
         "partner": si_no(f, "Partner GV", id_),
         "dir": v(f, "Dirección"),
         "nucleo": v(f, "Núcleo en plano"),
+        "sector": v(f, "Sector (GV / NP)") or ("GV" if est == "GV" else "NP"),
     }
+    if p["sector"] not in SECTORES:
+        errores.append(f"{id_}: Sector '{p['sector']}' no válido: tiene que ser GV (Grandvalira) o NP (Nord Pass).")
+    if tipo == "tienda" and not v(f, "Sector (GV / NP)"):
+        errores.append(f"{id_}: a la tienda le falta el Sector (GV o NP).")
     if not p["nombre"]:
         errores.append(f"{id_}: falta el 'Nombre en el mapa'.")
     if not p["zona"]:

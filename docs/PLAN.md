@@ -67,8 +67,8 @@ Qué aprendemos:
 - **Diseño "mapa primero"** con pestañas Escuela / Dónde comer / Alquiler; lista e información con "Ver lista"; ficha abajo al tocar un punto. En ordenador, la lista queda fija a la izquierda.
 - **4 idiomas** (ES, CA, FR, EN): por defecto el del móvil del cliente; se puede forzar con `l=`. Todos los textos están en el Excel (hojas **Textos** y **Frases**), con la redacción oficial de los bonos.
 - **Planos en teselas WebP** generadas desde los PDF oficiales, nítidos en pantallas de alta densidad.
-- **Tiendas:** burbuja por población → tiendas una a una al acercarse; filtro por marca; **"Cerca de mí"** (ordena por distancia, solo si el cliente da permiso); "Cómo llegar" con Google Maps. En el móvil empieza encuadrado en el lado de su estación.
-- **Restaurantes:** "Aceptan mi menú" / "Todos", leyenda de colores, Self primero si el menú es Self.
+- **Tiendas:** filtro por sector (**Grandvalira / Nord Pass**) con el color del sector en burbujas y pines; burbuja por población → tiendas una a una al acercarse; lista por sector y población; **"Cerca de mí"** (ordena por distancia, solo si el cliente da permiso); "Cómo llegar" con Google Maps. En el móvil empieza encuadrado en el lado de su estación.
+- **Restaurantes:** filtros **Menú Express / Menú Self / Todos** (Self solo en Grandvalira; empieza en el menú del pack; con Self también salen los Express donde se canjea), leyenda de colores y resumen del menú elegido.
 - **Comprobación del Excel** antes de publicar (IDs repetidos, núcleos que no existen, coordenadas fuera de Andorra, traducciones que faltan, `{n}` borrados…).
 - **`generador.html`:** enlace corto, QR (SVG para imprenta / PNG), código iframe y script para cada pack, vista previa y tabla con todos los packs.
 - **`Actualizar mapa.bat`:** doble clic → revisa el Excel → regenera → abre la vista previa → publica si dices que sí.

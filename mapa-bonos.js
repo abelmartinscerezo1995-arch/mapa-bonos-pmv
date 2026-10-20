@@ -17,7 +17,7 @@
  *   menu | m         express | self (self solo en GV)             (express)
  *   ver | v          pestaña inicial: escuela | comer | alquiler
  *   zona | z         abre las tiendas acercado a una población ("Pas de la Casa")
- *   marca | b        filtra las tiendas por marca ("Pic Negre")
+ *   sector           tiendas de un sector: GV (Grandvalira) | NP (Nord Pass = Pal Arinsal + Ordino Arcalís)
  *   lang | l         es | ca | fr | en (si no, el idioma del navegador o de la web)
  * Solo en el <div>: data-modo (insertado | pagina | iframe), data-alto ("560px"), data-datos (URL de datos.js),
  *   data-leer-url="si" (toma los parámetros de la dirección de la página).
@@ -58,21 +58,20 @@
     'El Tarter', 'Soldeu', "Bordes d'Envalira", 'Grau Roig', 'Pas de la Casa'];
   const ZONAS_OA = ['Ordino Arcalís', 'La Massana', 'Pal', 'Arinsal', 'Encamp', 'Encamp – Solanelles (pistas)', 'Canillo',
     'El Tarter', 'Soldeu', "Bordes d'Envalira", 'Grau Roig', 'Pas de la Casa'];
-  // zonasCerca: en pantallas estrechas el mapa de tiendas empieza encuadrado en estas poblaciones (el lado de la estación).
+  // sector: el de las tiendas que salen primero (GV = Grandvalira, NP = Nord Pass). El sector de cada tienda viene del Excel.
   const ESTACIONES = {
-    GV: { nombre: 'Grandvalira', color: '#0a6ebd', oscuro: '#0b2b4c', self: true, ordenTiendas: ZONAS_GV, zonasCerca: ZONAS_GV.slice(0, 8) },
-    PA: { nombre: 'Pal Arinsal', color: '#c8202f', oscuro: '#4a1016', self: false, ordenTiendas: ZONAS_PA, zonasCerca: ZONAS_PA.slice(0, 4) },
-    OA: { nombre: 'Ordino Arcalís', color: '#1f5aa6', oscuro: '#14284b', self: false, ordenTiendas: ZONAS_OA, zonasCerca: ZONAS_OA.slice(0, 4) }
+    GV: { nombre: 'Grandvalira', color: '#0a6ebd', oscuro: '#0b2b4c', self: true, ordenTiendas: ZONAS_GV, sector: 'GV' },
+    PA: { nombre: 'Pal Arinsal', color: '#c8202f', oscuro: '#4a1016', self: false, ordenTiendas: ZONAS_PA, sector: 'NP' },
+    OA: { nombre: 'Ordino Arcalís', color: '#1f5aa6', oscuro: '#14284b', self: false, ordenTiendas: ZONAS_OA, sector: 'NP' }
+  };
+  const SECTORES = {
+    GV: { nombre: 'Grandvalira', color: '#0a6ebd' },
+    NP: { nombre: 'Nord Pass', color: '#c8202f' }  // Pal Arinsal + Ordino Arcalís
   };
   const LADO_ZONA = { 'Pas de la Casa': 'top', 'Grau Roig': 'bottom', "Bordes d'Envalira": 'right', 'Soldeu': 'top', 'El Tarter': 'left',
     'Canillo': 'left', 'Encamp': 'bottom', 'Encamp – Solanelles (pistas)': 'left', 'La Massana': 'right', 'Pal': 'bottom',
     'Arinsal': 'top', 'Ordino Arcalís': 'right' };
   const NOMBRE_CORTO_ZONA = { 'Encamp – Solanelles (pistas)': 'Solanelles (en pistas)' };
-  const MARCAS = {
-    'Pic Negre': { c: '#1f1f1f', t: 'PN' }, 'Viladomat': { c: '#c62828', t: 'V' }, 'Shusski': { c: '#1565c0', t: 'S' },
-    'Esports Pirot': { c: '#e67700', t: 'EP' }, 'Skiset': { c: '#a61e4d', t: 'SK' }, 'Esports Rossell': { c: '#2b8a3e', t: 'R' },
-    'Sports Calbó': { c: '#6741d9', t: 'C' }, 'Sant Moritz': { c: '#6d4c41', t: 'SM' }
-  };
   const UMBRAL_TIENDAS = 14;  // a partir de este zoom se ven las tiendas una a una
   const ICON = {
     flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 22V3h2v1.2l10 .1-2.6 4.2L18 13H8v9z"/></svg>',
@@ -157,6 +156,8 @@ border-radius:999px;background:var(--mb-ink);color:#fff;padding:11px 18px;font-w
 .mb .mb-resumen-n{margin:12px 4px 0;font-weight:600}
 .mb .mb-grupo{margin:14px 0 0}
 .mb .mb-grupo-tit{display:flex;justify-content:space-between;gap:8px;margin:0 4px 6px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mb-muted)}
+.mb .mb-grupo-tit .mb-punto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.mb .mb-grupo-sub{margin:-2px 4px 6px}
 .mb .mb-items{background:var(--mb-card);border:1px solid var(--mb-line);border-radius:var(--mb-r);overflow:hidden}
 .mb .mb-item{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--mb-line);background:none;padding:10px 14px;color:var(--mb-ink);border-radius:0}
 .mb .mb-items>li:first-child>.mb-item{border-top:0}
@@ -204,7 +205,8 @@ background:var(--mb-card);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.2
 .mb .mb-pin.rest{background:var(--mb-express)}
 .mb .mb-pin.rest.self{background:var(--mb-self)}
 .mb .mb-pin.rest.no{background:var(--mb-no)}
-.mb .mb-pin.tienda{width:30px;height:30px;font-size:11px;font-weight:700;letter-spacing:-.02em}
+.mb .mb-pin.tienda{width:30px;height:30px}
+.mb .mb-pin.tienda svg{width:16px;height:16px}
 .mb .mb-pin.tienda .mb-estrella{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#ffd43b;color:#6b4f00;font-size:10px;line-height:15px;text-align:center;border:1px solid #fff}
 .mb .mb-icono.mb-sel .mb-pin{transform:scale(1.25);box-shadow:0 0 0 4px rgba(255,255,255,.95),0 2px 10px rgba(0,0,0,.55)}
 .mb .mb-burbuja{border-radius:50%;display:grid;place-items:center;background:var(--mb-oscuro);color:#fff;font-weight:700;font-size:16px;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.4);cursor:pointer}
@@ -349,9 +351,6 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
       q.x.m.setLatLng(map.layerPointToLatLng(p));
     });
   }
-  function marcaInfo(m) {
-    return MARCAS[m] || { c: '#546e7a', t: String(m || '?').split(/\s+/).map(w => w.charAt(0)).join('').slice(0, 2).toUpperCase() };
-  }
   function avisarHost(root, accion, extra) {
     try { root.dispatchEvent(new CustomEvent('mapabonos', { bubbles: true, detail: Object.assign({ accion }, extra) })); } catch (e) { /* navegadores viejos */ }
   }
@@ -402,8 +401,8 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
 
   // ---------- Opciones ----------
   const ALIAS = { estacion: ['estacion', 'e'], servicios: ['servicios', 's'], pack: ['pack', 'p'], menu: ['menu', 'm'],
-    ver: ['ver', 'v'], zona: ['zona', 'z'], marca: ['marca', 'b'], lang: ['lang', 'l', 'idioma'] };
-  const CLAVES_DATA = ['estacion', 'servicios', 'pack', 'menu', 'ver', 'zona', 'marca', 'lang', 'modo', 'alto', 'datos', 'leerUrl', 'debug'];
+    ver: ['ver', 'v'], zona: ['zona', 'z'], sector: ['sector'], lang: ['lang', 'l', 'idioma'] };
+  const CLAVES_DATA = ['estacion', 'servicios', 'pack', 'menu', 'ver', 'zona', 'sector', 'lang', 'modo', 'alto', 'datos', 'leerUrl', 'debug'];
   function leerOpciones(el, extra) {
     const d = el.dataset || {}, src = {};
     CLAVES_DATA.forEach(k => { if (d[k] != null && d[k] !== '') src[k] = d[k]; });
@@ -425,7 +424,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
     return {
       est, serv, modo,
       menu: String(src.menu || 'express').toLowerCase() === 'self' && ESTACIONES[est].self ? 'self' : 'express',
-      ver: src.ver, zona: src.zona, marca: src.marca, lang: src.lang,
+      ver: src.ver, zona: src.zona, sector: SECTORES[String(src.sector || '').toUpperCase()] ? String(src.sector).toUpperCase() : null, lang: src.lang,
       alto: src.alto, datos: src.datos || CONFIG.datos, debug: src.debug != null && src.debug !== 'no'
     };
   }
@@ -714,10 +713,11 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
       return P;
     }
 
+    const tarjeta = (titulo, puntos) => `<h2 class="mb-h">${esc(titulo)}</h2><ul class="mb-puntos">${lis(puntos)}</ul>`;
     function resumen(P, t, titulo, puntos, condiciones, despues) {
-      P.q('lado').innerHTML = `<div class="mb-tarjeta"><h2 class="mb-h">${esc(titulo)}</h2><ul class="mb-puntos">${lis(puntos)}</ul></div>
+      P.q('lado').innerHTML = `<div class="mb-tarjeta" data-r="tarjeta">${tarjeta(titulo, puntos)}</div>
         <p class="mb-resumen-n" data-r="resumen-n" hidden></p><div data-r="lista"></div>${despues || ''}
-        ${condiciones.length ? `<details class="mb-cond"><summary>${esc(t('panel.condiciones'))}</summary>${condiciones.map(c => `<p>${fmt(c)}</p>`).join('')}</details>` : ''}
+        <details class="mb-cond"><summary>${esc(t('panel.condiciones'))}</summary><div data-r="cond">${condiciones.map(c => `<p>${fmt(c)}</p>`).join('')}</div></details>
         <p class="mb-pie">${esc(E.nombre)} · ${esc(D.generado ? D.generado.slice(0, 10) : '')}</p>`;
     }
 
@@ -768,39 +768,49 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
     }
 
     // ----- Dónde comer -----
+    // Filtros: Menú Express · Menú Self (solo donde existe) · Todos. Empieza en el menú del pack.
+    // Con el menú Self también valen los restaurantes Express (se canjea el Self por un Express).
     function initComer(P, I) {
       const { t, tr } = I;
-      const menu = o.menu;
-      const acepta = p => (menu === 'self' ? (p.self || p.express) : p.express);
-      const etiqueta = p => {
-        if (menu === 'self') {
-          if (p.self) return `<span class="mb-b self">${esc(t('comer.badge.self'))}</span>`;
-          if (p.express) return `<span class="mb-b exp">${esc(t('comer.badge.canje'))}</span>`;
-        } else if (p.express) return `<span class="mb-b exp">${esc(t('comer.badge.express'))}</span>`;
-        return `<span class="mb-b no">${esc(t('comer.badge.no'))}</span>`;
-      };
       const rest = D.puntos.filter(p => p.tipo === 'restaurante' && p.est === o.est);
-      const nOk = rest.filter(acepta).length;
-      resumen(P, t, t(menu === 'self' ? 'comer.titulo.self' : 'comer.titulo.express'),
-        menu === 'self' ? [t('comer.self.p1'), t('comer.self.p2'), t('comer.self.p3')] : [t('comer.express.p1'), t('comer.express.p2')],
-        [t(menu === 'self' ? 'comer.cond.self' : 'comer.cond.express'), t('comer.cond2'), t('comer.cond3')]);
-      const leyenda = `<span class="mb-leyenda" aria-hidden="true">${menu === 'self' ? `<span><i style="background:var(--mb-self)"></i>Self</span>` : ''}
-        <span><i style="background:var(--mb-express)"></i>Express</span><span data-r="ley-no" hidden><i style="background:var(--mb-no)"></i>${esc(t('comer.leyenda.otros'))}</span></span>`;
-      P.q('sub').innerHTML = `<button type="button" class="mb-chip" data-modo="mio">${esc(t('comer.filtro.mio'))} <span class="mb-n">${nOk}</span></button>
-        <button type="button" class="mb-chip" data-modo="todos">${esc(t('comer.filtro.todos'))} <span class="mb-n">${rest.length}</span></button>
-        <span class="mb-sep"></span>${leyenda}`;
-      let modo = 'mio', pl = null, capa = null, marcHub = {}, primeraVez = true;
+      const MODOS = E.self ? ['express', 'self', 'todos'] : ['express', 'todos'];
+      const acepta = (p, m) => (m === 'self' ? (p.self || p.express) : m === 'express' ? p.express : true);
+      const tieneMenu = p => p.express || (E.self && p.self);
+      let modo = o.menu, pl = null, capa = null, marcHub = {}, primeraVez = true;
       const pos = [];
-      const resumenN = P.q('resumen-n');
-      resumenN.hidden = false;
-      resumenN.textContent = t('comer.cuenta', { n: nOk });
-
+      const badge = (clase, clave) => `<span class="mb-b ${clase}">${esc(t(clave))}</span>`;
+      const etiqueta = p => {
+        if (modo === 'self') return p.self ? badge('self', 'comer.badge.self') : badge('exp', 'comer.badge.canje');
+        if (modo === 'express') return badge('exp', 'comer.badge.express');
+        const b = (p.express ? badge('exp', 'comer.badge.express') : '') + (E.self && p.self ? badge('self', 'comer.badge.self') : '');
+        return b || badge('no', 'comer.badge.ninguno');
+      };
+      resumen(P, t, '', [], []);
+      // La tarjeta de arriba explica el menú elegido (con "Todos", el del pack).
+      function pintarResumen() {
+        const m = modo === 'todos' ? o.menu : modo;
+        const titulo = m === o.menu ? t(m === 'self' ? 'comer.titulo.self' : 'comer.titulo.express') : t(m === 'self' ? 'chip.self' : 'chip.express');
+        P.q('tarjeta').innerHTML = tarjeta(titulo, m === 'self' ? [t('comer.self.p1'), t('comer.self.p2'), t('comer.self.p3')] : [t('comer.express.p1'), t('comer.express.p2')]);
+        P.q('cond').innerHTML = [t(m === 'self' ? 'comer.cond.self' : 'comer.cond.express'), t('comer.cond2'), t('comer.cond3')].map(c => `<p>${fmt(c)}</p>`).join('');
+        const n = rest.filter(p => acepta(p, modo)).length;
+        const rn = P.q('resumen-n');
+        rn.hidden = false;
+        rn.textContent = modo === 'todos' ? t('comer.cuenta.todos', { n }) : t('comer.cuenta.menu', { n, menu: modo === 'self' ? 'Self' : 'Express' });
+      }
+      const nombreFiltro = { express: 'comer.filtro.express', self: 'comer.filtro.self', todos: 'comer.filtro.todos' };
+      P.q('sub').innerHTML = MODOS.map(m => `<button type="button" class="mb-chip" data-modo="${m}">${esc(t(nombreFiltro[m]))} <span class="mb-n">${
+        rest.filter(p => acepta(p, m)).length}</span></button>`).join('') + '<span class="mb-sep"></span><span class="mb-leyenda" data-r="leyenda" aria-hidden="true"></span>';
+      function pintarLeyenda() {
+        const item = (color, txt) => `<span><i style="background:var(${color})"></i>${esc(txt)}</span>`;
+        P.q('leyenda').innerHTML = (modo !== 'express' && E.self ? item('--mb-self', 'Self') : '') + item('--mb-express', 'Express') +
+          (modo === 'todos' ? item('--mb-no', t('comer.leyenda.otros')) : '');
+      }
       function fichaHub(hid, resaltar) {
         const n = D.nucleos[hid];
-        const peso = p => (acepta(p) ? 2 : 0) + (menu === 'self' && p.self ? 1 : 0);
-        const lista = rest.filter(p => p.nucleo === hid && (modo === 'todos' || acepta(p))).sort((a, b) => peso(b) - peso(a));
+        const peso = p => (tieneMenu(p) ? 2 : 0) + (modo !== 'express' && p.self ? 1 : 0);
+        const lista = rest.filter(p => p.nucleo === hid && acepta(p, modo)).sort((a, b) => peso(b) - peso(a));
         P.ficha(`<h3>${esc(tr(n.nombre))}</h3><ul>${lista.map(p => `<li${p.id === resaltar ? ' class="mb-marcado"' : ''}>
-          <strong>${esc(p.nombre)}</strong>${etiqueta(p)}<small class="mb-sec">${esc([tr(p.local), acepta(p) ? tr(p.nota) : ''].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>`,
+          <strong>${esc(p.nombre)}</strong>${etiqueta(p)}<small class="mb-sec">${esc([tr(p.local), tieneMenu(p) ? tr(p.nota) : ''].filter(Boolean).join(' · '))}</small></li>`).join('')}</ul>`,
           () => marcar(marcHub[hid], false));
         marcar(marcHub[hid], true);
         const m = P.q('ficha').querySelector('.mb-marcado');
@@ -814,22 +824,21 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         marcHub = {};
         pos.length = 0;
         const porHub = {};
-        rest.forEach(p => { if (p.nucleo && D.nucleos[p.nucleo]) (porHub[p.nucleo] = porHub[p.nucleo] || []).push(p); });
+        rest.forEach(p => { if (p.nucleo && D.nucleos[p.nucleo] && acepta(p, modo)) (porHub[p.nucleo] = porHub[p.nucleo] || []).push(p); });
         Object.keys(porHub).forEach(hid => {
-          const todos = porHub[hid], ok = todos.filter(acepta);
-          if (modo === 'mio' && !ok.length) return;
-          const n = D.nucleos[hid];
-          const clase = ok.length ? (menu === 'self' && ok.some(p => p.self) ? 'rest self' : 'rest') : 'rest no';
+          const lista = porHub[hid], n = D.nucleos[hid];
+          const conSelf = modo !== 'express' && E.self && lista.some(p => p.self), conExpress = lista.some(p => p.express);
+          const clase = conSelf ? 'rest self' : conExpress ? 'rest' : 'rest no';
           const ll = pl.ll(n.x, n.y);
           pos.push(ll);
-          const z = ok.length ? 500 : 0;
-          marcHub[hid] = L.marker(ll, { icon: pin(clase, ICON.fork, modo === 'mio' ? ok.length : todos.length), zIndexOffset: z, zBase: z, title: tr(n.nombre) })
+          const z = clase === 'rest no' ? 0 : 500;
+          marcHub[hid] = L.marker(ll, { icon: pin(clase, ICON.fork, lista.length), zIndexOffset: z, zBase: z, title: tr(n.nombre) })
             .on('click', () => fichaHub(hid)).addTo(capa);
         });
         if (primeraVez && pos.length) { encuadrar(pl, pos, P, t); primeraVez = false; }
       }
       function pintarLista() {
-        const visibles = rest.filter(p => modo === 'todos' || acepta(p));
+        const visibles = rest.filter(p => acepta(p, modo));
         const zonas = [];
         visibles.forEach(p => { if (!zonas.includes(p.zona)) zonas.push(p.zona); });
         P.q('lista').innerHTML = zonas.map(z => {
@@ -837,7 +846,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
           return `<div class="mb-grupo"><h3 class="mb-grupo-tit"><span>${esc(tr(z))}</span><span>${items.length}</span></h3><ul class="mb-items">${items.map(p => {
             const ok = p.nucleo && D.nucleos[p.nucleo];
             return `<li><button type="button" class="mb-item" data-hub="${esc(p.nucleo)}" data-id="${esc(p.id)}"${ok ? '' : ' disabled'}>
-              <span class="mb-nom">${esc(p.nombre)}</span>${etiqueta(p)}<small>${esc([tr(p.ubic), acepta(p) ? tr(p.nota) : tr(p.local)].filter(Boolean).join(' · '))}${
+              <span class="mb-nom">${esc(p.nombre)}</span>${etiqueta(p)}<small>${esc([tr(p.ubic), tieneMenu(p) ? tr(p.nota) : tr(p.local)].filter(Boolean).join(' · '))}${
                 !ok && o.debug ? ' · <i>sin núcleo en el plano</i>' : ''}</small></button></li>`;
           }).join('')}</ul></div>`;
         }).join('');
@@ -846,11 +855,15 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
       function setModo(m) {
         modo = m;
         P.q('sub').querySelectorAll('[data-modo]').forEach(b => b.setAttribute('aria-pressed', b.dataset.modo === m));
-        P.q('ley-no').hidden = m !== 'todos';
+        pintarLeyenda();
+        pintarResumen();
         pintarMapa();
         pintarLista();
       }
-      P.q('sub').addEventListener('click', e => { const b = e.target.closest('[data-modo]'); if (b) setModo(b.dataset.modo); });
+      P.q('sub').addEventListener('click', e => {
+        const b = e.target.closest('[data-modo]');
+        if (b && b.dataset.modo !== modo) { setModo(b.dataset.modo); avisarHost(root, 'menu', { menu: modo }); }
+      });
       P.q('lista').addEventListener('click', e => {
         const b = e.target.closest('[data-hub]');
         if (!b || !pl) return;
@@ -860,7 +873,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         volar(pl.map, m.getLatLng(), Math.max(pl.map.getZoom(), -0.5));
         fichaHub(b.dataset.hub, b.dataset.id);
       });
-      setModo('mio');
+      setModo(modo);
       cuandoVisible(P.q('mapa'), () => {
         pl = crearPlano(P.q('mapa'), o.est, D, o.modo);
         const extra = P.nuevoMapa(pl.map);
@@ -871,40 +884,44 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
     }
 
     // ----- Alquiler -----
+    // Filtro por sector: Grandvalira (GV) o Nord Pass (NP = Pal Arinsal + Ordino Arcalís). Pines y burbujas con el color del sector.
     function initAlquiler(P, I) {
       const { t, tr } = I;
       const tiendas = D.puntos.filter(p => p.tipo === 'tienda');
-      const conteo = {};
-      tiendas.forEach(p => { conteo[p.marca] = (conteo[p.marca] || 0) + 1; });
-      const principales = Object.keys(conteo).filter(m => conteo[m] >= 2).sort((a, b) => conteo[b] - conteo[a]);
-      let marcaSel = o.marca && (principales.includes(o.marca) || o.marca === 'Otras') ? o.marca : 'Todas';
-      const pasa = p => marcaSel === 'Todas' || (marcaSel === 'Otras' ? !principales.includes(p.marca) : p.marca === marcaSel);
+      const secDe = p => (SECTORES[p.sector] ? p.sector : E.sector);
+      const ordenSect = [E.sector].concat(Object.keys(SECTORES).filter(k => k !== E.sector));  // el de la estación, primero
+      let sectorSel = o.sector || 'todas';
+      const pasa = p => sectorSel === 'todas' || secDe(p) === sectorSel;
+      const nombreZona = z => tr(NOMBRE_CORTO_ZONA[z] || z);
       resumen(P, t, t('alquiler.titulo'), [t('alquiler.p1'), t('alquiler.p2'), t('alquiler.p3')],
         [t('alquiler.cond1'), '★ ' + t('alquiler.partner')]);
       P.q('sub').innerHTML = `<button type="button" class="mb-chip" data-r="cerca">${ICON.yo}${esc(t('alquiler.cerca'))}</button><span class="mb-sep"></span>` +
-        ['Todas'].concat(principales, ['Otras']).map(m => {
-          const n = m === 'Todas' ? tiendas.length : m === 'Otras' ? tiendas.filter(p => !principales.includes(p.marca)).length : conteo[m];
-          const dot = MARCAS[m] ? `<i style="background:${MARCAS[m].c}"></i>` : '';
-          const txt = m === 'Todas' ? t('alquiler.todas') : m === 'Otras' ? t('alquiler.otras') : m;
-          return `<button type="button" class="mb-chip" data-marca="${esc(m)}">${dot}${esc(txt)} <span class="mb-n">${n}</span></button>`;
-        }).join('');
+        `<button type="button" class="mb-chip" data-sector="todas">${esc(t('alquiler.todas'))} <span class="mb-n">${tiendas.length}</span></button>` +
+        ordenSect.map(k => `<button type="button" class="mb-chip" data-sector="${k}"${k === 'NP' ? ` title="${esc(t('alquiler.np_detalle'))}"` : ''}>
+          <i style="background:${SECTORES[k].color}"></i>${esc(SECTORES[k].nombre)} <span class="mb-n">${tiendas.filter(p => secDe(p) === k).length}</span></button>`).join('');
       let map = null, yo = null, marcaYo = null, ordenCerca = false, selId = null;
       let capaZonas, capaPins, marcTienda = {}, zonas = {}, burbujas = [], todas = null;
       const nTiendas = n => t(n === 1 ? 'alquiler.tienda' : 'alquiler.tiendas', { n });
       const MARGEN = () => (P.caja.clientWidth < 560 ? { padding: [24, 24] } : { paddingTopLeft: [60, 50], paddingBottomRight: [70, 50] });
+      const limitesDe = lista => { const c = lista.filter(p => p.lat != null); return c.length ? L.latLngBounds(c.map(p => [p.lat, p.lng])) : null; };
+      // Encuadre del filtro elegido. Con "Todas" en el móvil no caben todas las poblaciones con su nombre: se empieza por el sector de la estación.
+      function limitesVista() {
+        if (sectorSel !== 'todas') return limitesDe(tiendas.filter(pasa));
+        return P.caja.clientWidth < 700 ? limitesDe(tiendas.filter(p => secDe(p) === E.sector)) || todas : todas;
+      }
 
       function fichaTienda(p) {
         const d = yo && p.lat != null ? I.dist(distanciaM(yo, [p.lat, p.lng])) : '';
         P.ficha(`<h3>${esc(p.nombre)}</h3>
           ${p.partner ? `<p><span class="mb-b partner" style="margin-left:0">★ ${esc(t('alquiler.partner'))}</span></p>` : ''}
-          <p class="mb-sec">${esc([tr(p.zona === 'Encamp – Solanelles (pistas)' ? NOMBRE_CORTO_ZONA[p.zona] : p.zona), tr(p.ubic)].filter(Boolean).join(' · '))}${d ? ` · ${esc(d)}` : ''}</p>
+          <p class="mb-sec">${esc([t('alquiler.sector', { s: SECTORES[secDe(p)].nombre }), nombreZona(p.zona), tr(p.ubic)].filter(Boolean).join(' · '))}${d ? ` · ${esc(d)}` : ''}</p>
           ${p.dir ? `<p>${esc(p.dir)}</p>` : ''}${p.nota ? `<p>${esc(tr(p.nota))}</p>` : ''}
           ${p.lat != null ? `<a class="mb-boton" data-r="ir" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" rel="noopener">${ICON.ir}${esc(t('alquiler.como_llegar'))}</a>` : ''}`,
           () => { selId = null; marcar(marcTienda[p.id], false); });
         selId = p.id;
         marcar(marcTienda[p.id], true);
         const ir = P.q('ficha').querySelector('[data-r="ir"]');
-        if (ir) ir.addEventListener('click', () => avisarHost(root, 'como_llegar', { id: p.id, marca: p.marca }));
+        if (ir) ir.addEventListener('click', () => avisarHost(root, 'como_llegar', { id: p.id, sector: secDe(p) }));
         avisarHost(root, 'punto', { tipo: 'tienda', id: p.id });
       }
       function irAZona(z) {
@@ -927,7 +944,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         marcTienda = {}; zonas = {}; burbujas = [];
         const ancho = P.caja.clientWidth, TAM = ancho < 560 ? 32 : 44;
         tiendas.filter(pasa).forEach(p => {
-          const zo = zonas[p.zona] = zonas[p.zona] || { items: [], marcas: {} };
+          const zo = zonas[p.zona] = zonas[p.zona] || { items: [], marcas: {}, sector: secDe(p) };
           zo.items.push(p);
           zo.marcas[p.marca] = (zo.marcas[p.marca] || 0) + 1;
         });
@@ -939,22 +956,21 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
           const lado = LADO_ZONA[z] || 'right';
           const burbuja = L.marker(ll, {
             icon: L.divIcon({ className: 'mb-icono', iconSize: [TAM, TAM], iconAnchor: [TAM / 2, TAM / 2], tooltipAnchor: [0, 0],
-              html: `<div class="mb-burbuja" style="width:${TAM}px;height:${TAM}px;font-size:${TAM < 40 ? 14 : 16}px">${zo.items.length}</div>` }),
-            title: `${tr(NOMBRE_CORTO_ZONA[z] || z)}: ${nTiendas(zo.items.length)}`, keyboard: true, zIndexOffset: zo.items.length * 10
-          }).bindTooltip(esc(tr(NOMBRE_CORTO_ZONA[z] || z)), { permanent: true, direction: lado, className: 'mb-etq', offset: desfase(lado, TAM) })
+              html: `<div class="mb-burbuja" style="width:${TAM}px;height:${TAM}px;font-size:${TAM < 40 ? 14 : 16}px;background:${SECTORES[zo.sector].color}">${zo.items.length}</div>` }),
+            title: `${nombreZona(z)}: ${nTiendas(zo.items.length)}`, keyboard: true, zIndexOffset: zo.items.length * 10
+          }).bindTooltip(esc(nombreZona(z)), { permanent: true, direction: lado, className: 'mb-etq', offset: desfase(lado, TAM) })
             .on('click', () => irAZona(z)).addTo(capaZonas);
           burbujas.push({ m: burbuja, ll, n: zo.items.length, r: TAM / 2 + 3, lado, tam: TAM });
           con.forEach(p => {
-            const mi = marcaInfo(p.marca);
             marcTienda[p.id] = L.marker([p.lat, p.lng], { llReal: L.latLng(p.lat, p.lng),
-              icon: icono(`<div class="mb-pin tienda" style="background:${mi.c}">${esc(mi.t)}${p.partner ? '<span class="mb-estrella" aria-hidden="true">★</span>' : ''}</div>`, 30),
+              icon: icono(`<div class="mb-pin tienda" style="background:${SECTORES[secDe(p)].color}">${ICON.boot}${p.partner ? '<span class="mb-estrella" aria-hidden="true">★</span>' : ''}</div>`, 30),
               title: p.nombre
             }).on('click', () => fichaTienda(p))
               .on('add', e => { if (selId === p.id) marcar(e.target, true); })  // Leaflet rehace el pin al volver a mostrar la capa
               .addTo(capaPins);
           });
         });
-        P.q('sub').querySelectorAll('[data-marca]').forEach(b => b.setAttribute('aria-pressed', b.dataset.marca === marcaSel));
+        P.q('sub').querySelectorAll('[data-sector]').forEach(b => b.setAttribute('aria-pressed', b.dataset.sector === sectorSel));
         capas();
         pintarLista();
       }
@@ -1003,7 +1019,7 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         const sin = p.lat == null;
         const d = conDist && yo && !sin ? `<span class="mb-dist">${esc(I.dist(distanciaM(yo, [p.lat, p.lng])))}</span>` : '';
         return `<li><button type="button" class="mb-item" data-id="${esc(p.id)}"${sin ? ' disabled' : ''}>${d}<span class="mb-nom">${esc(p.nombre)}</span>${
-          p.partner ? '<span class="mb-b partner">★ Partner</span>' : ''}<small>${esc([conDist ? tr(NOMBRE_CORTO_ZONA[p.zona] || p.zona) : '', tr(p.ubic), p.dir].filter(Boolean).join(' · '))}${
+          p.partner ? '<span class="mb-b partner">★ Partner</span>' : ''}<small>${esc([conDist ? nombreZona(p.zona) : '', tr(p.ubic), p.dir].filter(Boolean).join(' · '))}${
           sin && o.debug ? ' · <i>sin posición</i>' : ''}</small></button></li>`;
       }
       function pintarLista() {
@@ -1018,11 +1034,19 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
           cont.querySelector('[data-r="por-zona"]').addEventListener('click', () => { ordenCerca = false; pintarLista(); });
           return;
         }
-        const orden = E.ordenTiendas.filter(z => zonas[z]).concat(Object.keys(zonas).filter(z => !E.ordenTiendas.includes(z)));
-        cont.innerHTML = orden.map(z => {
-          const zo = zonas[z];
-          return `<details class="mb-zona" data-zona="${esc(z)}"><summary><b>${esc(tr(NOMBRE_CORTO_ZONA[z] || z))}</b> ${esc(nTiendas(zo.items.length))}
-            <span>${esc(resumenMarcas(zo))}</span></summary><ul class="mb-items">${zo.items.map(p => itemTienda(p, false)).join('')}</ul></details>`;
+        // Sector → población (en el orden de cercanía a la estación) → tiendas.
+        const ordenZonas = E.ordenTiendas.filter(z => zonas[z]).concat(Object.keys(zonas).filter(z => !E.ordenTiendas.includes(z)));
+        cont.innerHTML = ordenSect.map(k => {
+          const zs = ordenZonas.filter(z => zonas[z].sector === k);
+          if (!zs.length) return '';
+          const n = zs.reduce((s, z) => s + zonas[z].items.length, 0);
+          return `<div class="mb-grupo"><h3 class="mb-grupo-tit"><span><i class="mb-punto" style="background:${SECTORES[k].color}"></i>${
+            esc(t('alquiler.sector', { s: SECTORES[k].nombre }))}</span><span>${n}</span></h3>${k === 'NP' ? `<p class="mb-sec mb-grupo-sub">${esc(t('alquiler.np_detalle'))}</p>` : ''}
+            ${zs.map(z => {
+              const zo = zonas[z];
+              return `<details class="mb-zona" data-zona="${esc(z)}"><summary><b>${esc(nombreZona(z))}</b> ${esc(nTiendas(zo.items.length))}
+                <span>${esc(resumenMarcas(zo))}</span></summary><ul class="mb-items">${zo.items.map(p => itemTienda(p, false)).join('')}</ul></details>`;
+            }).join('')}</div>`;
         }).join('');
         cont.querySelectorAll('details.mb-zona').forEach(d => d.addEventListener('toggle', () => { if (d.open && P.ancho()) irAZona(d.dataset.zona); }));
       }
@@ -1033,8 +1057,15 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         if (p) irATienda(p);
       });
       P.q('sub').addEventListener('click', e => {
-        const b = e.target.closest('[data-marca]');
-        if (b) { marcaSel = b.dataset.marca; pintar(); avisarHost(root, 'marca', { marca: marcaSel }); return; }
+        const b = e.target.closest('[data-sector]');
+        if (b) {
+          sectorSel = b.dataset.sector;
+          pintar();
+          const lim = limitesVista();
+          if (map && lim) volarA(map, lim, MARGEN());
+          avisarHost(root, 'sector', { sector: sectorSel });
+          return;
+        }
         if (e.target.closest('[data-r="cerca"]')) cercaDeMi();
       });
       function cercaDeMi() {
@@ -1070,14 +1101,11 @@ padding:5px 12px;border-radius:14px;width:max-content;max-width:calc(100% - 120p
         L.tileLayer(CONFIG.fondo.url, CONFIG.fondo.opciones).addTo(map);
         capaZonas = L.layerGroup();
         capaPins = L.layerGroup();
-        todas = L.latLngBounds(tiendas.filter(p => p.lat != null).map(p => [p.lat, p.lng]));
+        todas = limitesDe(tiendas);
         controlBotones(map, [{ icono: ICON.casa, titulo: t('alquiler.andorra'), click: () => volarA(map, todas, MARGEN()) }].concat(extra));
         map.on('zoomend', capas);
         map.on('mb:tamano', recolocar);
-        // En el móvil no caben todas las poblaciones con su nombre: se empieza por las del lado de la estación.
-        const cerca = tiendas.filter(p => p.lat != null && E.zonasCerca.includes(p.zona));
-        const inicio = P.caja.clientWidth < 700 && cerca.length ? L.latLngBounds(cerca.map(p => [p.lat, p.lng])) : todas;
-        map.fitBounds(inicio, Object.assign({ animate: false }, MARGEN()));
+        map.fitBounds(limitesVista() || todas, Object.assign({ animate: false }, MARGEN()));
         pintar();
         if (o.zona && zonas[o.zona] && zonas[o.zona].bounds) {
           // Sin animación: si Leaflet anima, el setZoom de después se aplicaría sobre el centro antiguo.
