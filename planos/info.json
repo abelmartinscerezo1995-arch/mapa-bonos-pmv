@@ -1,0 +1,26 @@
+{
+ "GV": {
+  "carpeta": "planos/GV-2526",
+  "ancho": 3200,
+  "alto": 1399,
+  "zMin": -3,
+  "zMax": 1,
+  "temporada": "25-26"
+ },
+ "PA": {
+  "carpeta": "planos/PA-2526",
+  "ancho": 3200,
+  "alto": 1470,
+  "zMin": -3,
+  "zMax": 1,
+  "temporada": "25-26"
+ },
+ "OA": {
+  "carpeta": "planos/OA-2526",
+  "ancho": 3200,
+  "alto": 1800,
+  "zMin": -3,
+  "zMax": 1,
+  "temporada": "25-26"
+ }
+}

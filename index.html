@@ -2,120 +2,35 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tu pack en el mapa</title>
 <meta name="description" content="Escuela, restaurantes y tiendas de alquiler de tu pack de esquí, en el mapa.">
+<meta name="theme-color" content="#0b2b4c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230a6ebd' d='m15 4-6-2-7 2.5V22l7-2.5 6 2 7-2.5V2zm-1 15.6-4-1.3V4.4l4 1.3z'/%3E%3C/svg%3E">
+<link rel="preload" href="vendor/leaflet/leaflet.js" as="script">
+<link rel="preload" href="datos.js" as="script">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: #f4f6f9; color: #17202b; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
-  header.top { background: #0b2b4c; color: #fff; padding: 18px 0 16px; }
-  header .eyebrow { margin: 0; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
-  header h1 { margin: 2px 0 10px; font-size: 24px; line-height: 1.2; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: 13px; }
-  details.demo { margin: 12px 0; background: #fff8db; border: 1px dashed #d9b84a; border-radius: 12px; padding: 8px 12px; font-size: 14px; }
-  details.demo summary { cursor: pointer; font-weight: 600; }
-  .demo-grid { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-top: 8px; }
-  .demo-grid label { display: inline-flex; align-items: center; gap: 6px; }
-  .demo code { font-size: 12px; word-break: break-all; }
-  .demo .hint { margin: 8px 0 2px; color: #5a6573; }
-  .demo a { color: #0a6ebd; font-weight: 600; }
-  main { padding-bottom: 24px; }
-  footer { color: #5a6573; font-size: 12.5px; padding: 8px 0 28px; }
-  #error { display: none; background: #c92a2a; color: #fff; padding: 10px 16px; font-weight: 600; }
-  @media (max-width: 560px) { header h1 { font-size: 21px; } }
+  html, body { height: 100%; margin: 0; }
+  body { background: #f3f5f8; color: #16202b; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+  main { flex: 1; min-height: 0; padding-bottom: env(safe-area-inset-bottom); }
+  noscript p { padding: 24px; }
+  /* Lo que se ve mientras carga el script (misma altura que la cabecera real: la página no salta) */
+  .esqueleto { height: 100%; display: flex; flex-direction: column; }
+  .esqueleto div { height: 60px; background: #0b2b4c; flex: none; padding: 18px 16px; }
+  .esqueleto svg { width: 24px; height: 24px; opacity: .6; }
+  .esqueleto span { margin: auto; width: 28px; height: 28px; border: 3px solid #dde3ea; border-top-color: #0a6ebd; border-radius: 50%; animation: giro .8s linear infinite; }
+  @keyframes giro { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<div id="error" role="alert"></div>
-<header class="top">
-  <div class="wrap">
-    <p class="eyebrow" id="estNombre"></p>
-    <h1>Tu pack, en el mapa</h1>
-    <div class="chips" id="chipsPack"></div>
-  </div>
-</header>
-
-<div class="wrap">
-  <details class="demo">
-    <summary>Simular otro pack (solo en el PMV)</summary>
-    <div class="demo-grid">
-      <label>Estación
-        <select id="dEst">
-          <option value="GV">Grandvalira</option>
-          <option value="PA">Pal Arinsal</option>
-          <option value="OA">Ordino Arcalís</option>
-        </select>
-      </label>
-      <span>Servicios:
-        <label><input type="checkbox" value="c" class="dServ"> Clases</label>
-        <label><input type="checkbox" value="m" class="dServ"> Menú</label>
-        <label><input type="checkbox" value="a" class="dServ"> Alquiler</label>
-      </span>
-      <label>Menú
-        <select id="dMenu">
-          <option value="express">Express</option>
-          <option value="self">Self (solo GV)</option>
-        </select>
-      </label>
-    </div>
-    <p class="hint">El bono enlazaría aquí con el pack ya puesto en la dirección: <code id="urlEjemplo"></code></p>
-    <p class="hint">¿Insertado dentro de otra web? Mira el <a href="ejemplo-embebido.html">ejemplo con el acordeón del bono</a>.</p>
-  </details>
-</div>
-
-<main class="wrap">
-  <!-- La página es solo un envoltorio: todo el mapa lo pinta mapa-bonos.js (el mismo script que se inserta en otras webs). -->
-  <div data-mapa-bonos data-leer-url="si"></div>
-</main>
-
-<footer class="wrap">PMV · Datos recopilados el 14-oct-2026 · Planos © Grandvalira Resorts · Mapa © colaboradores de OpenStreetMap</footer>
-
-<script>
-  (function () {
-    function err(msg) { var el = document.getElementById('error'); el.style.display = 'block'; el.textContent = 'Error: ' + msg; }
-    window.addEventListener('error', function (e) { err(e.message || e); });
-    window.addEventListener('unhandledrejection', function (e) { err((e.reason && e.reason.message) || e.reason); });
-
-    // Cabecera y simulador (lo que el widget no pinta).
-    var NOMBRES = { GV: 'Grandvalira', PA: 'Pal Arinsal', OA: 'Ordino Arcalís' };
-    var qs = new URLSearchParams(location.search);
-    var est = (qs.get('estacion') || 'GV').toUpperCase();
-    if (!NOMBRES[est]) est = 'GV';
-    var sp = qs.get('servicios');
-    var serv = (sp === null ? 'c,m,a' : sp).split(',').map(function (s) { return s.trim(); })
-      .filter(function (s) { return ['c', 'm', 'a'].indexOf(s) >= 0; });
-    var menu = (qs.get('menu') || 'express').toLowerCase() === 'self' && est === 'GV' ? 'self' : 'express';
-
-    document.getElementById('estNombre').textContent = NOMBRES[est];
-    var chips = [];
-    if (serv.indexOf('c') >= 0) chips.push('Clases colectivas');
-    if (serv.indexOf('m') >= 0) chips.push(menu === 'self' ? 'Menú Self' : 'Menú Express');
-    if (serv.indexOf('a') >= 0) chips.push('Alquiler de material');
-    document.getElementById('chipsPack').innerHTML = chips.map(function (c) { return '<span class="chip">' + c + '</span>'; }).join('');
-
-    function urlPack(e, s, m) {
-      var p = new URLSearchParams();
-      p.set('estacion', e); p.set('servicios', s.join(',')); p.set('menu', m);
-      return '?' + p.toString();
-    }
-    document.getElementById('dEst').value = est;
-    document.getElementById('dMenu').value = menu;
-    var cajas = document.querySelectorAll('.dServ');
-    Array.prototype.forEach.call(cajas, function (cb) { cb.checked = serv.indexOf(cb.value) >= 0; });
-    document.getElementById('urlEjemplo').textContent = (location.pathname.split('/').pop() || '') + urlPack(est, serv, menu);
-    function aplicar() {
-      var s = Array.prototype.filter.call(cajas, function (cb) { return cb.checked; }).map(function (cb) { return cb.value; });
-      location.search = urlPack(document.getElementById('dEst').value, s, document.getElementById('dMenu').value);
-    }
-    document.getElementById('dEst').addEventListener('change', aplicar);
-    document.getElementById('dMenu').addEventListener('change', aplicar);
-    Array.prototype.forEach.call(cajas, function (cb) { cb.addEventListener('change', aplicar); });
-  })();
-</script>
-<script src="mapa-bonos.js"></script>
+<!-- Página del QR: solo un envoltorio. Todo lo pinta mapa-bonos.js (el mismo script que se inserta en otras webs).
+     Ejemplo: index.html?e=GV&s=cma&m=self   ·   e = estación, s = servicios (c clases, m menú, a alquiler), m = menú, l = idioma -->
+<main><div data-mapa-bonos data-modo="pagina"><div class="esqueleto"><div><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="m15 4-6-2-7 2.5V22l7-2.5 6 2 7-2.5V2zm-1 15.6-4-1.3V4.4l4 1.3z"/></svg></div><span></span></div></div></main>
+<noscript><p>Para ver el mapa hace falta activar JavaScript.</p></noscript>
+<script src="vendor/leaflet/leaflet.js" defer></script>
+<script src="datos.js" defer></script>
+<script src="mapa-bonos.js" defer></script>
 </body>
 </html>

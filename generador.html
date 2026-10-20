@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de enlaces y QR · Mapa de los bonos</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<style>
+  :root { --ink: #16202b; --muted: #5b6673; --line: #dde3ea; --bg: #f3f5f8; --card: #fff; --acc: #0a6ebd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  header { background: #0b2b4c; color: #fff; padding: 18px 16px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 4px 0 0; opacity: .85; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 16px; margin: 16px auto 32px; align-items: start; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card + .card { margin-top: 16px; }
+  h2 { font-size: 17px; margin: 0 0 10px; }
+  label { display: block; font-weight: 600; margin: 12px 0 4px; }
+  label small { font-weight: 400; color: var(--muted); }
+  select, input[type=text] { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .chk { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; margin: 0 12px 0 0; }
+  button, .btn { font: inherit; font-weight: 600; border: 1px solid var(--acc); background: var(--acc); color: #fff; border-radius: 8px; padding: 8px 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  button.sec, .btn.sec { background: #fff; color: var(--acc); }
+  textarea { width: 100%; font: 13px/1.45 ui-monospace, Consolas, monospace; padding: 10px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; background: #fbfcfd; color: var(--ink); }
+  .url { font: 14px ui-monospace, Consolas, monospace; word-break: break-all; background: #fbfcfd; border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 0 0 10px; }
+  .qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .qr .img { width: 180px; height: 180px; border: 1px solid var(--line); border-radius: 8px; padding: 6px; background: #fff; }
+  .qr .img svg { width: 100%; height: 100%; display: block; }
+  .nota { color: var(--muted); font-size: 13.5px; margin: 8px 0 0; }
+  .aviso { background: #fff8db; border: 1px solid #ecd27a; border-radius: 8px; padding: 8px 10px; font-size: 13.5px; margin-top: 10px; }
+  .ok { color: #2b8a3e; font-weight: 600; margin-left: 6px; }
+  iframe.prev { width: 100%; height: 560px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--line); vertical-align: middle; }
+  td .mini { width: 64px; height: 64px; }
+  td .mini svg { width: 100%; height: 100%; }
+  td code { font-size: 12px; word-break: break-all; }
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Generador de enlaces y QR</h1><p>Herramienta interna: elige el pack y copia el enlace, el QR o el código para la web.</p></div></header>
+
+<main class="wrap grid">
+  <form class="card" id="f" onsubmit="return false">
+    <h2>1. El pack</h2>
+    <label for="base">Dirección del mapa <small>(cámbiala cuando esté en el servidor definitivo)</small></label>
+    <input type="text" id="base" spellcheck="false">
+    <label for="est">Estación</label>
+    <select id="est"><option value="GV">Grandvalira</option><option value="PA">Pal Arinsal</option><option value="OA">Ordino Arcalís</option></select>
+    <label for="pack">Pack <small>(el código del bono: f forfait, c clases, m menú, a alquiler)</small></label>
+    <select id="pack"></select>
+    <label for="menu">Menú</label>
+    <select id="menu"><option value="express">Express</option><option value="self">Self Service (solo Grandvalira)</option></select>
+    <label for="lang">Idioma</label>
+    <select id="lang">
+      <option value="">Automático: el del móvil del cliente (recomendado)</option>
+      <option value="es">Español</option><option value="ca">Català</option><option value="fr">Français</option><option value="en">English</option>
+    </select>
+    <label for="ver">Pestaña que se abre primero</label>
+    <select id="ver"><option value="">La primera del pack</option><option value="escuela">Escuela</option><option value="comer">Dónde comer</option><option value="alquiler">Alquiler</option></select>
+    <p class="nota">El forfait no sale en el mapa: un pack solo con forfait no necesita QR.</p>
+  </form>
+
+  <div>
+    <section class="card">
+      <h2>2. Enlace y QR (para el bono, el email o un cartel)</h2>
+      <p class="url" id="url"></p>
+      <div class="fila"><button type="button" id="copiarUrl">Copiar enlace</button><a class="btn sec" id="abrir" target="_blank" rel="noopener">Abrir</a><span class="ok" id="okUrl" hidden>Copiado</span></div>
+      <div class="qr" style="margin-top:14px">
+        <div class="img" id="qr"></div>
+        <div>
+          <div class="fila"><button type="button" class="sec" id="bajarSvg">Descargar SVG (imprenta)</button><button type="button" class="sec" id="bajarPng">Descargar PNG</button></div>
+          <p class="nota">Para imprimir, mejor el SVG: no pierde calidad. Tamaño mínimo recomendado en papel: 2 × 2 cm.<br>Prueba siempre el QR con un móvil antes de mandarlo a imprenta.</p>
+        </div>
+      </div>
+      <p class="aviso" id="avisoLocal" hidden>Esta dirección es de tu ordenador (localhost o archivo): el QR solo funcionará cuando pongas arriba la dirección del servidor.</p>
+    </section>
+
+    <section class="card">
+      <h2>3. Código para meterlo en la web de Grandvalira</h2>
+      <label for="alto">Alto del mapa</label>
+      <select id="alto"><option>480px</option><option selected>560px</option><option>640px</option></select>
+      <label for="codIframe">Opción A · iframe <small>(la más segura en Drupal: el editor no suele borrar iframes)</small></label>
+      <textarea id="codIframe" rows="4" readonly></textarea>
+      <div class="fila"><button type="button" id="copiarIframe">Copiar código iframe</button><span class="ok" id="okIframe" hidden>Copiado</span></div>
+      <label for="codScript" style="margin-top:16px">Opción B · script <small>(si la web permite scripts; se adapta mejor al diseño)</small></label>
+      <textarea id="codScript" rows="4" readonly></textarea>
+      <div class="fila"><button type="button" id="copiarScript">Copiar código script</button><span class="ok" id="okScript" hidden>Copiado</span></div>
+      <p class="nota">Dentro de otra web el mapa se mueve con dos dedos en el móvil (con uno se sigue bajando por la página) y tiene un botón para abrirlo a pantalla completa.</p>
+    </section>
+
+    <section class="card">
+      <h2>Vista previa (tal como se vería insertado)</h2>
+      <iframe class="prev" id="prev" title="Vista previa del mapa" loading="lazy"></iframe>
+    </section>
+
+    <section class="card">
+      <h2>Todos los packs de esta estación</h2>
+      <table><thead><tr><th>Pack</th><th>QR</th><th>Enlace</th><th>Descargar</th></tr></thead><tbody id="tabla"></tbody></table>
+    </section>
+  </div>
+</main>
+
+<script src="vendor/qrcode/qrcode.js"></script>
+<script>
+(function () {
+  // Packs que existen en los bonos (carpeta contenidos_packs).
+  var PACKS = {
+    GV: ['f_c_m_a', 'f_c_m', 'f_c_a', 'f_m_a', 'f_c', 'f_m', 'f_a', 'c_m_a', 'c_m', 'c_a', 'm_a'],
+    PA: ['f_c_m_a', 'f_c_m', 'f_c_a', 'f_m_a', 'f_c', 'f_m', 'f_a'],
+    OA: ['f_c_m_a', 'f_c_m', 'f_c_a', 'f_m_a', 'f_c', 'f_m', 'f_a']
+  };
+  var NOMBRES = { f: 'Forfait', c: 'Clases', m: 'Menú', a: 'Alquiler' };
+  var $ = function (id) { return document.getElementById(id); };
+  var base0 = location.href.replace(/[^\/]*([?#].*)?$/, '');
+  $('base').value = base0;
+
+  function nombrePack(c) { return c.split('_').map(function (x) { return NOMBRES[x]; }).join(' + '); }
+  function servicios(c) { return c.split('_').filter(function (x) { return x !== 'f'; }).join(''); }
+  function rellenarPacks() {
+    var e = $('est').value, prev = $('pack').value;
+    $('pack').innerHTML = PACKS[e].map(function (c) { return '<option value="' + c + '">' + c + ' · ' + nombrePack(c) + '</option>'; }).join('');
+    if (PACKS[e].indexOf(prev) >= 0) $('pack').value = prev;
+    $('menu').querySelector('[value=self]').disabled = e !== 'GV';
+    if (e !== 'GV') $('menu').value = 'express';
+  }
+  function base() { var b = $('base').value.trim(); return b && !/\/$/.test(b) && !/\.html?$/.test(b) ? b + '/' : b; }
+  function params(pack) {
+    var p = new URLSearchParams();
+    p.set('e', $('est').value);
+    p.set('s', servicios(pack));
+    if ($('menu').value === 'self' && pack.indexOf('m') >= 0) p.set('m', 'self');
+    if ($('ver').value && servicios(pack).indexOf({ escuela: 'c', comer: 'm', alquiler: 'a' }[$('ver').value]) >= 0) p.set('v', $('ver').value);
+    if ($('lang').value) p.set('l', $('lang').value);
+    return p.toString();
+  }
+  function urlPagina(pack) { return base().replace(/index\.html$/, '') + '?' + params(pack); }
+  function urlEmbed(pack) { return base().replace(/index\.html$/, '') + 'embed.html?' + params(pack); }
+  function qrSvg(texto, celda) {
+    var qr = qrcode(0, 'M');
+    qr.addData(texto);
+    qr.make();
+    return { svg: qr.createSvgTag({ cellSize: celda || 4, margin: 4, scalable: true }), qr: qr };
+  }
+  function descargar(nombre, blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+  function png(qr, nombre) {
+    var n = qr.getModuleCount(), m = 4, px = 16, c = document.createElement('canvas');
+    c.width = c.height = (n + 2 * m) * px;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.fillStyle = '#000';
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (qr.isDark(y, x)) ctx.fillRect((x + m) * px, (y + m) * px, px, px);
+    c.toBlob(function (b) { descargar(nombre, b); });
+  }
+  function copiar(texto, ok) {
+    var hecho = function () { $(ok).hidden = false; setTimeout(function () { $(ok).hidden = true; }, 1500); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texto).then(hecho);
+    else { var t = document.createElement('textarea'); t.value = texto; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); hecho(); }
+  }
+  function nombreFichero(pack) { return 'qr-mapa-' + $('est').value + '-' + pack + ($('lang').value ? '-' + $('lang').value : '') + ($('menu').value === 'self' && pack.indexOf('m') >= 0 ? '-self' : ''); }
+
+  var actual = null;
+  function pintar() {
+    var pack = $('pack').value, sinMapa = servicios(pack) === '';
+    var u = urlPagina(pack), ue = urlEmbed(pack);
+    $('url').textContent = sinMapa ? 'Este pack solo lleva forfait: no tiene mapa.' : u;
+    $('abrir').href = u;
+    actual = sinMapa ? null : qrSvg(u, 6);
+    $('qr').innerHTML = actual ? actual.svg : '';
+    $('avisoLocal').hidden = !/^(file:|https?:\/\/(localhost|127\.0\.0\.1))/.test(base());
+    var alto = $('alto').value, tit = 'Mapa del pack: ' + nombrePack(pack);
+    $('codIframe').value = '<iframe src="' + ue + '" style="width:100%;height:' + alto + ';border:0;border-radius:12px" loading="lazy" allow="geolocation" title="' + tit + '"></iframe>';
+    var p = new URLSearchParams(params(pack)), d = ['data-mapa-bonos', 'data-estacion="' + p.get('e') + '"', 'data-servicios="' + p.get('s') + '"'];
+    if (p.get('m')) d.push('data-menu="self"');
+    if (p.get('v')) d.push('data-ver="' + p.get('v') + '"');
+    if (p.get('l')) d.push('data-lang="' + p.get('l') + '"');
+    d.push('data-alto="' + alto + '"');
+    $('codScript').value = '<div ' + d.join(' ') + '></div>\n<script src="' + base().replace(/index\.html$/, '') + 'mapa-bonos.js" defer><\/script>';
+    $('prev').src = sinMapa ? 'about:blank' : ue;
+    $('prev').style.height = alto;
+    $('tabla').innerHTML = PACKS[$('est').value].filter(function (c) { return servicios(c); }).map(function (c) {
+      var uu = urlPagina(c);
+      return '<tr><td><b>' + c + '</b><br><small>' + nombrePack(c) + '</small></td><td><div class="mini">' + qrSvg(uu, 2).svg + '</div></td>' +
+        '<td><code>' + uu.replace(/&/g, '&amp;') + '</code></td><td><button type="button" class="sec" data-svg="' + c + '">SVG</button></td></tr>';
+    }).join('');
+  }
+  $('tabla').addEventListener('click', function (e) {
+    var c = e.target.getAttribute('data-svg');
+    if (c) descargar(nombreFichero(c) + '.svg', new Blob([qrSvg(urlPagina(c), 8).svg], { type: 'image/svg+xml' }));
+  });
+  $('copiarUrl').onclick = function () { copiar($('url').textContent, 'okUrl'); };
+  $('copiarIframe').onclick = function () { copiar($('codIframe').value, 'okIframe'); };
+  $('copiarScript').onclick = function () { copiar($('codScript').value, 'okScript'); };
+  $('bajarSvg').onclick = function () { if (actual) descargar(nombreFichero($('pack').value) + '.svg', new Blob([actual.svg], { type: 'image/svg+xml' })); };
+  $('bajarPng').onclick = function () { if (actual) png(actual.qr, nombreFichero($('pack').value) + '.png'); };
+  ['est', 'pack', 'menu', 'lang', 'ver', 'alto'].forEach(function (id) { $(id).addEventListener('change', function () { if (id === 'est') rellenarPacks(); pintar(); }); });
+  $('base').addEventListener('input', pintar);
+  rellenarPacks();
+  pintar();
+})();
+</script>
+</body>
+</html>
