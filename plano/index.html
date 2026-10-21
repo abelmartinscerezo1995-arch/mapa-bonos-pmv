@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano Grandvalira</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="leaflet/leaflet.css">
+<style>
+  :root { --navy: #0b2b4c; --azul: #0a6ebd; --express: #d0450e; --self: #29843c; --carta: #6c7884; --fondo: #e9edf1; --linea: #dde3ea; }
+  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: #14202b; }
+  body { display: flex; flex-direction: column; height: 100dvh; }
+  header { flex: none; height: 50px; background: var(--navy); color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 0 14px; }
+  header small { opacity: .75; font-size: 11px; }
+  header b { font-size: 16px; }
+  nav.tabs { flex: none; display: flex; background: #fff; border-bottom: 1px solid var(--linea); }
+  nav.tabs button { flex: 1; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: #5b6773; padding: 10px 0 8px; border-bottom: 3px solid transparent; cursor: pointer; }
+  nav.tabs button[aria-selected="true"] { color: var(--azul); border-bottom-color: var(--azul); }
+  .fila { flex: none; display: flex; gap: 6px; overflow-x: auto; padding: 7px 10px; background: #fff; border-bottom: 1px solid var(--linea); scrollbar-width: none; }
+  .fila:empty { display: none; }
+  .fila button { flex: none; border: 1px solid #cfd7df; background: #fff; border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 13px; color: #24313d; cursor: pointer; white-space: nowrap; }
+  .fila button span { color: #6b7782; margin-left: 4px; }
+  .fila button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .fila button.on span { color: rgba(255,255,255,.75); }
+  .filtros { gap: 5px; padding: 7px 8px; }
+  .filtros button { flex: 1 0 auto; padding: 5px 9px; font-size: 13px; font-weight: 600; }
+  .filtros button i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+  .filtros button.on i { box-shadow: 0 0 0 1.5px #fff; }
+  .sectores { background: #f6f8fa; padding: 6px 10px; }
+  .sectores button { font-size: 12.5px; padding: 4px 10px; }
+  #mapa { flex: 1; position: relative; background: var(--fondo); }
+  .leaflet-container { background: var(--fondo); font-family: inherit; }
+  .pueblo { background: none; border: 0; box-shadow: none; padding: 0; font-weight: 800; font-size: 13px; color: #1d2a36; letter-spacing: .02em;
+            text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 6px #fff, 0 0 6px #fff; white-space: nowrap; }
+  .leaflet-tooltip::before { display: none; }
+  .sin-pueblos .leaflet-tooltip.pueblo { visibility: hidden !important; }
+  .remonte { background: none; border: 0; box-shadow: none; padding: 0; font-size: 10.5px; font-weight: 700; color: #2d3238;
+             text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 4px #fff, 0 0 4px #fff; white-space: nowrap; }
+  .pin { position: absolute; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+         box-shadow: 0 1px 4px rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; box-sizing: border-box; transition: transform .15s; cursor: pointer; }
+  .pin svg { width: 13px; height: 13px; fill: #fff; filter: drop-shadow(0 0 1px rgba(0,0,0,.35)); }
+  .pin.e { background: var(--azul); width: 30px; height: 30px; }
+  .pin.e svg { width: 15px; height: 15px; }
+  .pin.sel, .pin.hover { transform: translate(-50%, -50%) scale(1.25); box-shadow: 0 0 0 4px rgba(11,43,76,.25), 0 2px 6px rgba(0,0,0,.4); }
+  /* Nombre junto al pin (si no cabe al lado, más lejos con una rayita que lo une) */
+  .etq3 { position: absolute; left: 0; top: 0; box-sizing: border-box; background: rgba(255,255,255,.95); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.28);
+          padding: 3px 7px; font-size: 11.5px; line-height: 15px; font-weight: 600; color: #14202b; white-space: nowrap; cursor: pointer; pointer-events: auto; }
+  .etq3 div { display: flex; align-items: center; }
+  .etq3 div + div { margin-top: 1px; }
+  .etq3 i { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  .etq3 b { display: block; font-size: 12px; }
+  .etq3 small { display: block; font-size: 10.5px; font-weight: 500; color: #5b6773; line-height: 13px; }
+  .etq3.oculta { visibility: hidden; }
+  .etq3.hover, .etq3.sel { visibility: visible; box-shadow: 0 0 0 2px var(--navy), 0 2px 6px rgba(0,0,0,.3); }
+  .regla { visibility: hidden !important; left: -9999px; }
+  .leaflet-pane.quieto { opacity: 0; }
+  .leaflet-pane.etiquetas, .leaflet-pane.guias { transition: opacity .15s; }
+  .burbuja { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 4px; color: #fff;
+             border: 2px solid #fff; border-radius: 999px; padding: 3px 7px 3px 4px; font-size: 12px; font-weight: 700; white-space: nowrap;
+             box-shadow: 0 1px 5px rgba(0,0,0,.4); cursor: pointer; }
+  .burbuja i { font-style: normal; background: #fff; border-radius: 999px; min-width: 18px; height: 18px; display: inline-flex;
+               align-items: center; justify-content: center; font-size: 11.5px; padding: 0 3px; box-sizing: border-box; }
+  .burbuja svg { width: 14px; height: 14px; fill: #fff; }
+  .ley { position: absolute; left: 10px; bottom: 22px; z-index: 500; background: rgba(255,255,255,.94); border-radius: 10px; padding: 5px 9px;
+         box-shadow: 0 1px 4px rgba(0,0,0,.2); font-size: 11px; color: #222; display: flex; gap: 8px; align-items: center; transition: opacity .2s; }
+  .ley i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+  .ficha { position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 1001; background: #fff; border-radius: 14px; padding: 14px 44px 12px 16px;
+           box-shadow: 0 4px 18px rgba(0,0,0,.25); display: none; max-height: 48%; overflow: auto; box-sizing: border-box; }
+  .ficha.on { display: block; }
+  .ficha h3 { margin: 0 0 3px; font-size: 16px; }
+  .ficha p { margin: 2px 0; font-size: 13.5px; color: #4a5763; }
+  .ficha ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  .ficha li { padding: 7px 0; border-top: 1px solid #eef1f4; }
+  .ficha li strong { font-size: 14.5px; margin-right: 4px; }
+  .ficha li small { display: block; color: #5b6773; font-size: 12.5px; margin-top: 2px; }
+  .ficha li.sel strong { color: var(--navy); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .ficha .x { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f6; font-size: 18px; cursor: pointer; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; margin: 2px 4px 0 0; color: #fff; vertical-align: 1px; }
+  .badge.ex { background: var(--express); } .badge.se { background: var(--self); } .badge.ca { background: #e3e7eb; color: #3d4954; }
+  .web { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 7px 12px; border: 1.5px solid var(--navy); border-radius: 999px;
+         color: var(--navy); font-size: 13px; font-weight: 700; text-decoration: none; }
+  .web:hover { background: var(--navy); color: #fff; }
+  .ficha li .web { margin-top: 6px; padding: 5px 11px; font-size: 12.5px; }
+  .aviso { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 600; background: rgba(20,32,43,.86); color: #fff; font-size: 12.5px;
+           border-radius: 999px; padding: 6px 12px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
+  /* Fila de botones que no cabe: se difumina por la derecha para que se vea que hay más */
+  .fila.mas { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+  /* Móvil estrecho: los 4 filtros caben sin desplazar */
+  @media (max-width: 380px) {
+    .filtros { gap: 4px; padding: 6px; }
+    .filtros button { padding: 5px 6px; font-size: 11.5px; }
+    .filtros button i { width: 8px; height: 8px; margin-right: 4px; }
+    .filtros button span { margin-left: 3px; }
+  }
+  /* Pantalla baja (móvil en horizontal, iframe bajo): sin cabecera ni aviso de entrada, para dejar sitio al plano */
+  @media (max-height: 500px) {
+    header, .aviso { display: none; }
+    nav.tabs button { padding: 6px 0 5px; }
+    .ficha { max-height: 62%; }
+  }
+</style>
+</head>
+<body>
+<header><small>Grandvalira · Clases colectivas + Menú</small><b>Tu pack en el mapa</b></header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-modo="comer" aria-selected="true">Dónde comer</button>
+  <button role="tab" data-modo="escuela" aria-selected="false">Escuela</button>
+</nav>
+<div class="fila filtros" id="filtros"></div>
+<div class="fila sectores" id="sectores"></div>
+<div id="mapa">
+  <div class="ley" id="ley"><span><i style="background:#1e9e4a"></i>Verde</span><span><i style="background:#1a73c7"></i>Azul</span><span><i style="background:#d93a3a"></i>Roja</span><span><i style="background:#1d1d1d"></i>Negra</span><span><i style="background:#2d3238;height:2px"></i>Remonte</span></div>
+  <div class="aviso" id="aviso">Toca un sector o acerca el plano</div>
+  <div class="ficha" id="ficha" role="dialog" aria-live="polite"><button class="x" aria-label="Cerrar">×</button><div></div></div>
+</div>
+<script src="leaflet/leaflet.js"></script>
+<script src="lineas.js"></script>
+<script src="puntos.js"></script>
+<script>
+// Datos: líneas de OpenStreetMap (herramientas/plano/lineas.py) y puntos del Excel (herramientas/plano/puntos.py)
+const D = Object.assign({ puntos: window.PLANO_PUNTOS }, window.PLANO_LINEAS);
+const COL = { novice: '#1e9e4a', easy: '#1a73c7', intermediate: '#d93a3a', advanced: '#1d1d1d', expert: '#1d1d1d', freeride: '#e07b00', '?': '#8a8f96' };
+const SECTORES = ['Encamp', 'Canillo', 'El Tarter', 'Soldeu', 'Grau Roig', 'Peretol', 'Pas de la Casa'];
+const ICO_R = '<svg viewBox="0 0 24 24"><path d="M8.1 13.3 10.9 10.5 3.9 3.5a4 4 0 0 0 0 5.6zm6.8-1.8c1.5.7 3.7.2 5.3-1.4 1.9-1.9 2.3-4.7.8-6.1-1.4-1.4-4.2-1.1-6.1.8-1.6 1.6-2.1 3.8-1.4 5.3L3.7 19.9l1.4 1.4 6.9-6.9 6.9 6.9 1.4-1.4-6.9-6.9z"/></svg>';
+const ICO_E = '<svg viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+// Filtros de Dónde comer (el primero es el que se ve al entrar)
+const MENUS = {
+  express: { nombre: 'Express', color: '#d0450e', vale: p => p.x },
+  self:    { nombre: 'Self',    color: '#29843c', vale: p => p.s },
+  carta:   { nombre: 'A la carta',   color: '#6c7884', vale: p => !p.x && !p.s },
+  todos:   { nombre: 'Todos',        color: '#0b2b4c', vale: () => true },
+};
+const REST = D.puntos.filter(p => p.t === 'restaurante');
+// Qué incluye el Self: la nota más repetida entre los restaurantes que solo tienen Self
+const NOTA_SELF = (() => { const f = {}; REST.filter(p => p.s && !p.x && p.nota).forEach(p => f[p.nota] = (f[p.nota] || 0) + 1); return Object.keys(f).sort((a, b) => f[b] - f[a])[0] || ''; })();
+// Color(es) de un restaurante con el filtro actual: con "Todos", el de cada menú que acepta
+const colores = p => menu !== 'todos' ? [MENUS[menu].color] :
+  [p.x && MENUS.express.color, p.s && MENUS.self.color, !p.x && !p.s && MENUS.carta.color].filter(Boolean);
+const fondo = cs => cs.length === 1 ? cs[0] : `conic-gradient(${cs.map((c, i) => `${c} ${i * 100 / cs.length}% ${(i + 1) * 100 / cs.length}%`).join(',')})`;
+const nombre = p => p.n.replace(/\s+[–-]\s+.*$/, '');
+const peso = p => (p.x ? 0 : p.s ? 1 : 2);
+
+// Zona que cubre el relieve (teselas z14 8262..8273 x 6041..6054; la misma que en herramientas/plano/comun.py)
+const t2ll = (x, y, z) => { const n = 2 ** z; return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180]; };
+const REL = L.latLngBounds(t2ll(8262, 6055, 14), t2ll(8274, 6041, 14));
+
+// Zoom máximo 16.5: más cerca el relieve ya se ve borroso (las teselas llegan a z15). La capa de relieve se queda en 17
+// porque Leaflet redondea el zoom (16.5 → 17) para elegir teselas, y si pasa del máximo de la capa no pinta ninguna.
+const mapa = L.map('mapa', { zoomSnap: 0.25, zoomDelta: 0.5, maxZoom: 16.5, maxBounds: REL, maxBoundsViscosity: 1, zoomControl: false, preferCanvas: true });
+L.control.zoom({ position: 'topright' }).addTo(mapa);
+mapa.attributionControl.setPrefix(false).addAttribution('© OpenStreetMap · relieve: AWS Terrain Tiles');
+L.tileLayer('relieve/{z}/{x}/{y}.webp', { minNativeZoom: 11, maxNativeZoom: 15, maxZoom: 17, bounds: REL, keepBuffer: 4 }).addTo(mapa);
+// Cada tipo de línea en su propia capa del mapa (pane), para que el orden de dibujo no cambie al mostrar u ocultar
+const ren = {};
+['carretera', 'zona', 'borde', 'pista', 'remonteBorde', 'remonte', 'estacion'].forEach((n, i) => {
+  mapa.createPane(n).style.zIndex = 401 + i;
+  ren[n] = L.canvas({ pane: n, padding: 0.4 });
+});
+// Rayitas que unen un nombre con su pin (debajo de los pines) y nombres (encima)
+const paneGuias = mapa.createPane('guias'); paneGuias.style.zIndex = 590; paneGuias.classList.add('guias');
+const paneEtq = mapa.createPane('etiquetas'); paneEtq.style.zIndex = 640; paneEtq.classList.add('etiquetas');
+ren.guias = L.svg({ pane: 'guias', padding: 0.4 });
+
+// Capas por nivel de detalle
+const g = () => L.layerGroup();
+const capas = { carretera: g(), zona: g(), borde: g(), pista: g(), bordeCorta: g(), corta: g(), remonteBorde: g(), remonte: g(), estacion: g() };
+D.carreteras.forEach(c => L.polyline(c, { renderer: ren.carretera, color: '#aab2bb', weight: 2, interactive: false }).addTo(capas.carretera));
+D.zonas.forEach(z => L.polygon(z.c, { renderer: ren.zona, stroke: false, fillColor: COL[z.d] || COL['?'], fillOpacity: 0.08, interactive: false }).addTo(capas.zona));
+D.pistas.forEach(p => {
+  L.polyline(p.c, { renderer: ren.borde, color: '#fff', weight: 4, opacity: .9, interactive: false }).addTo(p.k ? capas.bordeCorta : capas.borde);
+  L.polyline(p.c, { renderer: ren.pista, color: COL[p.d] || COL['?'], weight: 2, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(p.k ? capas.corta : capas.pista);
+});
+const telecabinas = [];
+D.remontes.forEach(r => {
+  L.polyline(r.c, { renderer: ren.remonteBorde, color: '#fff', weight: 3.6, opacity: .9, interactive: false }).addTo(capas.remonteBorde);
+  const l = L.polyline(r.c, { renderer: ren.remonte, color: '#2d3238', weight: 1.6, interactive: false }).addTo(capas.remonte);
+  [r.c[0], r.c[r.c.length - 1]].forEach(c => L.circleMarker(c, { renderer: ren.estacion, radius: 2.6, color: '#2d3238', weight: 1.4, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(capas.estacion));
+  if (r.t === 'gondola' || r.t === 'cable_car') telecabinas.push({ l, n: r.n.replace(/^TC\d*\s*/, 'Telecabina ') });
+});
+['carretera', 'zona', 'borde', 'pista', 'bordeCorta', 'corta', 'remonteBorde', 'remonte', 'estacion'].forEach(k => capas[k].addTo(mapa));
+
+D.pueblos.forEach(p => L.marker(p.c, { icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }), interactive: false, keyboard: false })
+  .bindTooltip(p.n, { permanent: true, direction: 'center', className: 'pueblo' }).addTo(mapa));
+
+// ---------- Estado ----------
+let modo = 'comer', menu = 'express', selId = null;
+const visibles = () => modo === 'escuela' ? D.puntos.filter(p => p.t === 'escuela') : REST.filter(MENUS[menu].vale);
+const capaPuntos = L.layerGroup().addTo(mapa);
+let grupos = [], burbujas = [];
+const conRaton = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+// ---------- Agrupar los que caen en el mismo sitio ----------
+// Dos restaurantes a menos de JUNTOS píxeles (mismo edificio o casi) comparten pin y su nombre va en una lista.
+const JUNTOS = 26;
+function agrupar(ps, z) {
+  const gs = [];
+  [...ps].sort((a, b) => peso(a) - peso(b) || nombre(a).localeCompare(nombre(b))).forEach(p => {
+    const pt = mapa.project(p.c, z);
+    const g = gs.find(g => g.pt.distanceTo(pt) < JUNTOS);
+    if (g) { g.ps.push(p); g.pt = g.ps.map(q => mapa.project(q.c, z)).reduce((a, b) => a.add(b)).divideBy(g.ps.length); }
+    else gs.push({ ps: [p], pt });
+  });
+  gs.forEach(g => { g.esc = g.ps[0].t === 'escuela'; g.r = g.esc ? 16 : 13; g.html = htmlEtq(g); Object.assign(g, medir(g.html)); });
+  return gs;
+}
+function htmlEtq(g) {
+  if (g.esc) { const p = g.ps[0]; return `<b>${esc(p.z)}</b><small>${esc(p.u.replace(/\s*\(.*\)/, ''))}</small>`; }
+  const puntos = menu === 'todos' && g.ps.length > 1;
+  return g.ps.map(p => `<div>${puntos ? `<i style="background:${fondo(colores(p))}"></i>` : ''}${esc(nombre(p))}</div>`).join('');
+}
+// Tamaño de un nombre en pantalla (se mide una vez y se guarda)
+const regla = L.DomUtil.create('div', 'etq3 regla', mapa.getContainer()), medidas = {};
+function medir(html) {
+  if (!medidas[html]) { regla.innerHTML = html; medidas[html] = { w: Math.ceil(regla.offsetWidth), h: Math.ceil(regla.offsetHeight) }; }
+  return medidas[html];
+}
+
+// ---------- Dónde va cada nombre ----------
+// Se prueba al lado del pin (derecha, izquierda, arriba, abajo, esquinas) y, si no cabe, un poco más lejos con una rayita.
+// Nunca encima de otro nombre ni de otro pin.
+const choca = (a, b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+const tocaPin = (k, x, y, r) => { const dx = Math.max(k.l - x, 0, x - k.r), dy = Math.max(k.t - y, 0, y - k.b); return dx * dx + dy * dy < r * r; };
+const enRaya = (s, f) => { for (let i = 1; i < 10; i++) if (f(s[0] + (s[2] - s[0]) * i / 10, s[1] + (s[3] - s[1]) * i / 10)) return true; return false; };
+function candidatos(x, y, w, h, r) {
+  const d = r * 0.75;
+  const c = [[x + r + 3, y - h / 2], [x - r - 3 - w, y - h / 2], [x - w / 2, y - r - 3 - h], [x - w / 2, y + r + 3],
+             [x + d, y - d - h], [x + d, y + d], [x - d - w, y - d - h], [x - d - w, y + d]].map(([l, t]) => ({ l, t }));
+  for (const largo of [36, 60, 92, 130]) for (const a of [0, 180, -40, 40, -140, 140, -90, 90, -65, 65, -115, 115]) {
+    const cos = Math.cos(a * Math.PI / 180), sin = Math.sin(a * Math.PI / 180), ex = x + largo * cos, ey = y + largo * sin;
+    c.push({ l: cos > 0.3 ? ex : cos < -0.3 ? ex - w : ex - w / 2, t: Math.abs(cos) > 0.3 ? ey - h / 2 : sin < 0 ? ey - h : ey, guia: [x + r * cos, y + r * sin, ex, ey] });
+  }
+  return c;
+}
+// gs: grupos con x, y (píxeles), w, h; fijos: zonas prohibidas; lim: borde de la pantalla (o null = sin bordes)
+// Si alguno se queda sin sitio, se vuelve a probar empezando por los que no cupieron.
+function situar(gs, fijos, lim) {
+  gs.forEach(g => { g.fuera = !!lim && (g.x < lim.l || g.x > lim.r || g.y < lim.t || g.y > lim.b); });
+  let orden = gs.filter(g => !g.fuera).sort((a, b) => b.w * b.h - a.w * a.h), mejor = null;
+  for (let intento = 0; intento < 4; intento++) {
+    const fallan = probar(orden, gs, fijos, lim);
+    if (!mejor || fallan.length < mejor.fallan) mejor = { fallan: fallan.length, sitio: gs.map(g => [g.caja, g.l, g.t, g.guia]) };
+    if (!fallan.length) break;
+    orden = fallan.concat(orden.filter(g => !fallan.includes(g)));
+  }
+  gs.forEach((g, i) => [g.caja, g.l, g.t, g.guia] = mejor.sitio[i]);
+  return mejor.fallan === 0;
+}
+function probar(orden, gs, fijos, lim) {
+  const cajas = fijos.slice(), rayas = [];
+  gs.forEach(g => { g.caja = null; g.guia = null; });
+  orden.forEach(g => {
+    for (const c of candidatos(g.x, g.y, g.w, g.h, g.r)) {
+      const k = { l: c.l - 2, t: c.t - 2, r: c.l + g.w + 2, b: c.t + g.h + 2 };
+      if (lim && (k.l < lim.l || k.r > lim.r || k.t < lim.t || k.b > lim.b)) continue;
+      if (cajas.some(o => choca(o, k)) || gs.some(o => tocaPin(k, o.x, o.y, o.r))) continue;
+      if (rayas.some(s => enRaya(s, (x, y) => x > k.l && x < k.r && y > k.t && y < k.b))) continue;
+      if (c.guia && enRaya(c.guia, (x, y) => cajas.some(o => x > o.l && x < o.r && y > o.t && y < o.b) || gs.some(o => o !== g && (x - o.x) ** 2 + (y - o.y) ** 2 < o.r * o.r))) continue;
+      g.caja = k; g.l = c.l; g.t = c.t; g.guia = c.guia || null;
+      cajas.push(k); if (c.guia) rayas.push(c.guia);
+      break;
+    }
+  });
+  return orden.filter(g => !g.caja);
+}
+// ¿Caben todos los nombres de estos puntos a este zoom? (sin contar los bordes de la pantalla)
+function caben(ps, z) {
+  const gs = agrupar(ps, z);
+  gs.forEach(g => { g.x = g.pt.x; g.y = g.pt.y; });
+  return situar(gs, [], null);
+}
+
+// ---------- Pintar puntos (al cambiar de zoom, de pestaña o de filtro) ----------
+const lejos = () => modo === 'comer' && mapa.getZoom() < 13.75;
+function pintar() {
+  capaPuntos.clearLayers();
+  mapa.getContainer().classList.toggle('sin-pueblos', mapa.getZoom() < 13.75);   // de lejos, los nombres ya van en las burbujas y las escuelas
+  const z = mapa.getZoom(), ps = visibles();
+  // Restaurantes: de lejos, una burbuja por sector; de cerca, uno a uno, salvo los sectores donde aún no caben los nombres
+  const porSector = {};
+  ps.forEach(p => (porSector[p.z] = porSector[p.z] || []).push(p));
+  const enBurbuja = modo === 'comer' ? Object.keys(porSector).filter(s => lejos() || !caben(porSector[s], z)) : [];
+  burbujas = enBurbuja.map(s => {
+    const b = L.latLngBounds(porSector[s].map(p => p.c)), n = porSector[s].length, c = MENUS[menu].color;
+    const m = L.marker(b.getCenter(), { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="burbuja" style="background:${c}">${ICO_R}${esc(s)}<i style="color:${c}">${n}</i></div>` }), zIndexOffset: 500 })
+      .on('click', () => irA(s)).addTo(capaPuntos);
+    return m;
+  });
+  apartar(burbujas);
+  grupos = agrupar(ps.filter(p => !enBurbuja.includes(p.z)), z);
+  grupos.forEach(g => {
+    g.ll = mapa.unproject(g.pt, z);
+    const cs = [...new Set(g.ps.flatMap(colores))];
+    g.pin = L.marker(g.ll, { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="pin ${g.esc ? 'e' : 'r'}" style="background:${g.esc ? '' : fondo(cs)}">${g.esc ? ICO_E : ICO_R}</div>` }),
+      zIndexOffset: g.esc ? 1000 : 0, keyboard: true, title: conRaton ? '' : g.ps.map(nombre).join(', '), alt: g.ps.map(nombre).join(', ') }).addTo(capaPuntos);
+    g.etq = L.marker(g.ll, { pane: 'etiquetas', icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="etq3">${g.html}</div>` }), keyboard: false }).addTo(capaPuntos);
+    g.raya = null;
+    [g.pin, g.etq].forEach(m => {
+      m.on('click', e => { L.DomEvent.stopPropagation(e); abrir(g); });
+      m.on('mouseover', () => resaltar(g, true)); m.on('mouseout', () => resaltar(g, false));
+    });
+    // Con teclado: el pin se alcanza con el tabulador, se lee su nombre y se abre con Intro o espacio
+    const el = g.pin.getElement();
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', g.ps.map(g.esc ? (p => p.n) : nombre).join(', '));
+    g.pin.on('keypress', e => { const k = e.originalEvent.key; if (k === 'Enter' || k === ' ') { e.originalEvent.preventDefault(); abrir(g); } });
+  });
+  marcarSel();
+  colocar();
+}
+
+// Burbujas que se pisan: se separan lo justo (por el lado en que menos se pisan)
+function apartar(ms) {
+  const cs = ms.map(m => { const el = m.getElement().firstChild, p = mapa.latLngToContainerPoint(m.getLatLng()); return { m, x: p.x, y: p.y, w: el.offsetWidth + 6, h: el.offsetHeight + 6 }; });
+  for (let vuelta = 0; vuelta < 30; vuelta++) {
+    let movido = false;
+    cs.forEach((a, i) => cs.slice(i + 1).forEach(b => {
+      const ox = (a.w + b.w) / 2 - Math.abs(a.x - b.x), oy = (a.h + b.h) / 2 - Math.abs(a.y - b.y);
+      if (ox <= 0 || oy <= 0) return;
+      movido = true;
+      if (ox < oy) { const d = (ox / 2 + 0.5) * (a.x < b.x ? -1 : 1); a.x += d; b.x -= d; }
+      else { const d = (oy / 2 + 0.5) * (a.y < b.y ? -1 : 1); a.y += d; b.y -= d; }
+    }));
+    if (!movido) break;
+  }
+  cs.forEach(c => c.m.setLatLng(mapa.containerPointToLatLng([c.x, c.y])));
+}
+
+// ---------- Colocar los nombres en la pantalla actual (también al mover el plano) ----------
+function rect(el) {
+  const c = mapa.getContainer().getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { l: r.left - c.left - 3, t: r.top - c.top - 3, r: r.right - c.left + 3, b: r.bottom - c.top + 3 };
+}
+function colocar() {
+  const tam = mapa.getSize();
+  const fijos = burbujas.map(b => rect(b.getElement().firstChild));
+  fijos.push(rect(document.querySelector('.leaflet-control-zoom')));
+  if (mapa.getZoom() >= 13.75) fijos.push(rect(document.getElementById('ley')));
+  grupos.forEach(g => { const p = mapa.latLngToContainerPoint(g.ll); g.x = p.x; g.y = p.y; });
+  situar(grupos, fijos, { l: 4, t: 4, r: tam.x - 4, b: tam.y - 4 });
+  grupos.forEach(g => {
+    const el = g.etq.getElement().firstChild;
+    if (g.caja) g.etq.setLatLng(mapa.containerPointToLatLng([g.l, g.t]));
+    else g.etq.setLatLng(mapa.containerPointToLatLng([g.x + g.r + 3, g.y - g.h / 2]));   // sin sitio: escondido, sale al pasar el ratón
+    el.classList.toggle('oculta', !g.caja);
+    if (g.raya) { capaPuntos.removeLayer(g.raya); g.raya = null; }
+    if (g.guia) {   // rayita discontinua azul marino con borde blanco (para no confundirla con un remonte)
+      const ll = [mapa.containerPointToLatLng(g.guia.slice(0, 2)), mapa.containerPointToLatLng(g.guia.slice(2))];
+      g.raya = L.layerGroup([L.polyline(ll, { renderer: ren.guias, color: '#fff', weight: 4, opacity: .9, interactive: false }),
+        L.polyline(ll, { renderer: ren.guias, color: '#0b2b4c', weight: 1.6, dashArray: '4 3', interactive: false })]).addTo(capaPuntos);
+    }
+  });
+  paneEtq.classList.remove('quieto'); paneGuias.classList.remove('quieto');
+  requestAnimationFrame(sinSolapes);
+}
+// Nombres de pueblos y telecabinas: se esconden si pisan un restaurante, una escuela o su nombre
+function sinSolapes() {
+  const puestos = [...document.querySelectorAll('#mapa .pin, #mapa .burbuja, #mapa .etq3:not(.oculta):not(.regla), .leaflet-control-zoom')].map(rect);
+  if (mapa.getZoom() >= 13.75) puestos.push(rect(document.getElementById('ley')));
+  const tam = mapa.getSize();
+  document.querySelectorAll('#mapa .leaflet-tooltip.pueblo, #mapa .leaflet-tooltip.remonte').forEach(el => {
+    el.style.visibility = '';
+    const k = rect(el);
+    if (puestos.some(p => choca(p, k)) || k.l < 0 || k.r > tam.x) el.style.visibility = 'hidden'; else puestos.push(k);
+  });
+}
+function resaltar(g, si) {
+  if (!conRaton) return;
+  const el = g.etq.getElement(), pin = g.pin.getElement();
+  if (el) { el.firstChild.classList.toggle('hover', si); el.style.zIndex = si ? 99999 : ''; if (!si) g.etq.setZIndexOffset(0); }
+  if (pin) pin.firstChild.classList.toggle('hover', si);
+}
+
+// ---------- Ficha ----------
+const ficha = document.getElementById('ficha');
+// La ficha está dentro del mapa: que tocarla, arrastrar o hacer scroll en ella no mueva ni cierre el plano
+L.DomEvent.disableClickPropagation(ficha);
+L.DomEvent.disableScrollPropagation(ficha);
+const enlace = p => p.w ? `<a class="web" href="${esc(p.w)}" target="_blank" rel="noopener">Más info en grandvalira.com ↗</a>` : '';
+const badges = p => (p.x ? '<span class="badge ex">Menú Express</span>' : '') + (p.s ? '<span class="badge se">Menú Self</span>' : '') + (!p.x && !p.s ? '<span class="badge ca">A la carta</span>' : '');
+const incluye = p => menu === 'self' ? NOTA_SELF : menu === 'carta' ? p.l : p.x ? p.nota : p.s ? NOTA_SELF : p.l;
+function abrir(g) {
+  selId = g.ps[0].id;
+  marcarSel();
+  const p = g.ps[0];
+  let h;
+  if (g.esc) h = `<h3>${esc(p.n)}</h3><p>${esc(p.u)}</p><p>${esc(p.nota || '')}</p>${enlace(p)}`;
+  else if (g.ps.length === 1) h = `<h3>${esc(nombre(p))}</h3><p>${esc(p.u)}</p><p>${badges(p)}</p><p>${esc(incluye(p) || '')}</p>${enlace(p)}`;
+  else h = `<h3>${g.ps.length} restaurantes aquí</h3><p>${esc(p.z)}</p><ul>${g.ps.map(q => `<li><strong>${esc(nombre(q))}</strong>${badges(q)}<small>${esc([q.u, incluye(q)].filter(Boolean).join(' · '))}</small>${enlace(q)}</li>`).join('')}</ul>`;
+  ficha.lastElementChild.innerHTML = h;
+  ficha.classList.add('on'); ficha.scrollTop = 0;
+  // Si la ficha tapa el pin o su nombre, se sube el plano
+  const y = mapa.latLngToContainerPoint(g.ll).y, tope = (mapa.getSize().y - ficha.offsetHeight - 12) * 0.55;
+  if (y > tope) mapa.panBy([0, y - tope]);
+}
+function marcarSel() {
+  grupos.forEach(g => {
+    const si = g.ps.some(p => p.id === selId);
+    if (g.pin.getElement()) g.pin.getElement().firstChild.classList.toggle('sel', si);
+    if (g.etq.getElement()) g.etq.getElement().firstChild.classList.toggle('sel', si);
+  });
+}
+function cerrar() { ficha.classList.remove('on'); selId = null; marcarSel(); }
+ficha.querySelector('.x').onclick = cerrar;
+mapa.on('click', cerrar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ficha.classList.contains('on')) cerrar(); });
+
+// ---------- Ir a un sector: al zoom justo para que se lean todos los nombres ----------
+function irA(s) {
+  const ps = visibles().filter(p => p.z === s);
+  if (!ps.length) return;
+  // Márgenes: abajo, sitio para la leyenda; a los lados, para los nombres
+  const b = L.latLngBounds(ps.map(p => p.c)), arribaIzq = L.point(24, 24), abajoDer = L.point(24, 64);
+  const tope = mapa.getBoundsZoom(b, false, arribaIzq.add(abajoDer).add([60, 20]));
+  let z = 14;
+  while (z < 16.5 && !caben(ps, z)) z += 0.25;
+  z = Math.max(z, Math.min(tope, 15));
+  const centro = mapa.project(b.getSouthWest(), z).add(mapa.project(b.getNorthEast(), z)).divideBy(2).add(abajoDer.subtract(arribaIzq).divideBy(2));
+  mapa.flyTo(mapa.unproject(centro, z), z, { duration: 0.8 });
+  document.querySelectorAll('.sectores button').forEach(x => {
+    x.classList.toggle('on', x.dataset.z === s);
+    if (x.dataset.z === s) {   // si el botón está escondido en la fila (p. ej. al tocar una burbuja), la fila se desplaza hasta él
+      const f = x.parentElement, d = x.getBoundingClientRect().left - f.getBoundingClientRect().left;
+      if (d < 0 || d + x.offsetWidth > f.clientWidth) f.scrollBy({ left: d - 10, behavior: 'smooth' });
+    }
+  });
+}
+// Al arrastrar el plano a otro sitio, ningún sector queda marcado
+mapa.on('dragstart', () => document.querySelectorAll('.sectores button.on').forEach(b => b.classList.remove('on')));
+
+// ---------- Botones ----------
+// Si tras cambiar de filtro o de pestaña no queda nada a la vista, se vuelve a enseñar toda la estación
+function sinNadaALaVista() {
+  const v = mapa.getBounds();
+  return !grupos.some(g => v.contains(g.ll)) && !burbujas.some(b => v.contains(b.getLatLng()));
+}
+function pintarFiltros() {
+  const f = document.getElementById('filtros');
+  f.innerHTML = modo !== 'comer' ? '' : Object.entries(MENUS).map(([k, m]) =>
+    `<button data-menu="${k}" class="${k === menu ? 'on' : ''}" aria-pressed="${k === menu}"><i style="background:${k === 'todos' ? fondo([MENUS.express.color, MENUS.self.color, MENUS.carta.color]) : m.color}"></i>${m.nombre}<span>${REST.filter(m.vale).length}</span></button>`).join('');
+  f.querySelectorAll('button').forEach(b => b.onclick = () => {
+    menu = b.dataset.menu; cerrar(); pintarFiltros(); pintarSectores(); pintar();
+    if (sinNadaALaVista()) vistaInicial();
+  });
+  pistaFila(f);
+}
+function pintarSectores() {
+  const cuenta = {};
+  visibles().forEach(p => (cuenta[p.z] = (cuenta[p.z] || 0) + 1));
+  const f = document.getElementById('sectores');
+  f.innerHTML = SECTORES.filter(z => cuenta[z])
+    .map(z => `<button data-z="${z}">${z}${modo === 'comer' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('');
+  f.querySelectorAll('button').forEach(b => b.onclick = () => irA(b.dataset.z));
+  pistaFila(f);
+}
+// Filas de botones que no caben en pantalla: difuminado a la derecha mientras quede algo por ver,
+// y con ratón la rueda las desplaza en horizontal (sin barra de desplazamiento no habría otra forma)
+function pistaFila(f) { f.classList.toggle('mas', f.scrollLeft + f.clientWidth < f.scrollWidth - 2); }
+document.querySelectorAll('.fila').forEach(f => {
+  f.addEventListener('scroll', () => pistaFila(f), { passive: true });
+  f.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const antes = f.scrollLeft; f.scrollLeft += e.deltaY;
+    if (f.scrollLeft !== antes) e.preventDefault();
+  }, { passive: false });
+});
+window.addEventListener('resize', () => document.querySelectorAll('.fila').forEach(pistaFila));
+function cambiarModo(m) {
+  modo = m; cerrar();
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.modo === m));
+  pintarFiltros(); pintarSectores();
+  mapa.invalidateSize({ animate: false });   // las filas de botones cambian el alto del plano
+  nivel(); pintar();
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { cambiarModo(b.dataset.modo); if (sinNadaALaVista()) vistaInicial(); });
+
+// ---------- Qué líneas se ven según lo cerca que estés ----------
+const pon = (capa, si) => si ? (mapa.hasLayer(capa) || capa.addTo(mapa)) : mapa.removeLayer(capa);
+function nivel() {
+  const z = mapa.getZoom();
+  const vista = z < 13.75, cerca = z >= 14.75;
+  const w = vista ? 1.4 : cerca ? 3 + (z - 14.75) * 1.6 : 2.2;
+  capas.pista.eachLayer(l => l.setStyle({ weight: w, opacity: vista ? 0.6 : 1 }));
+  capas.corta.eachLayer(l => l.setStyle({ weight: w }));
+  capas.borde.eachLayer(l => l.setStyle({ weight: w + 2 }));
+  capas.bordeCorta.eachLayer(l => l.setStyle({ weight: w + 2 }));
+  pon(capas.borde, !vista); pon(capas.corta, cerca); pon(capas.bordeCorta, cerca); pon(capas.zona, cerca);
+  pon(capas.remonte, !vista); pon(capas.remonteBorde, !vista); pon(capas.estacion, z >= 15.25);
+  telecabinas.forEach(({ l, n }) => {
+    if (z >= 14 && !l.getTooltip()) l.bindTooltip(n, { permanent: true, direction: 'center', className: 'remonte' });
+    if (z < 14 && l.getTooltip()) l.unbindTooltip();
+  });
+  document.getElementById('ley').style.opacity = vista ? 0 : 1;
+}
+
+// ---------- Arranque ----------
+// Zoom mínimo: el que llena la pantalla de relieve (sin bandas vacías)
+function ajustarMin() { mapa.setMinZoom(0); mapa.setMinZoom(mapa.getBoundsZoom(REL, true)); }
+// Vista de entrada: toda la estación; en Dónde comer, alejando un poco más si alguna burbuja de sector se sale de la pantalla
+function vistaInicial() {
+  mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], animate: false });
+  for (let i = 0; i < 12 && burbujas.length; i++) {
+    const tam = mapa.getSize(), rs = burbujas.map(b => rect(b.getElement().firstChild));
+    const l = Math.min(...rs.map(r => r.l)), r = Math.max(...rs.map(r => r.r)), t = Math.min(...rs.map(r => r.t)), b = Math.max(...rs.map(r => r.b));
+    if (l >= 0 && r <= tam.x && t >= 0 && b <= tam.y) break;
+    const grande = r - l > tam.x || b - t > tam.y;
+    // Pantalla muy apaisada (móvil en horizontal): para que quepan todas las burbujas se deja ver algo de borde a los lados
+    if (grande && mapa.getZoom() - 0.25 < mapa.getMinZoom()) mapa.setMinZoom(mapa.getZoom() - 0.25);
+    mapa.setView(mapa.containerPointToLatLng([(l + r) / 2, (t + b) / 2]), grande ? mapa.getZoom() - 0.25 : mapa.getZoom(), { animate: false });
+  }
+}
+const q = new URLSearchParams(location.search);
+if (q.get('modo') === 'escuela') modo = 'escuela';
+if (MENUS[q.get('menu')]) menu = q.get('menu');
+// ?abrir=<id>: va a ese punto y abre su ficha
+const pA = D.puntos.find(p => p.id === q.get('abrir'));
+if (pA) { modo = pA.t === 'escuela' ? 'escuela' : 'comer'; if (modo === 'comer' && !MENUS[menu].vale(pA)) menu = 'todos'; }
+mapa.setView(REL.getCenter(), 13, { animate: false });
+ajustarMin();
+mapa.on('zoomstart', () => { paneEtq.classList.add('quieto'); paneGuias.classList.add('quieto'); });
+mapa.on('zoomend', () => { nivel(); pintar(); });
+mapa.on('moveend', colocar);
+mapa.on('resize', () => { ajustarMin(); colocar(); });
+new ResizeObserver(() => mapa.invalidateSize({ animate: false })).observe(mapa.getContainer());   // p. ej. si cambia el alto del iframe
+cambiarModo(modo);
+// ?c=lat,lon,zoom (si viene mal escrito, se ignora y se enseña toda la estación)
+const c = (q.get('c') || '').split(',').map(Number);
+if (c.length >= 2 && c.every(Number.isFinite)) mapa.setView([c[0], c[1]], c[2] || 15, { animate: false });
+else vistaInicial();
+mapa.once('zoomstart movestart', () => document.getElementById('aviso').style.opacity = 0);
+if (pA) { mapa.once('moveend', () => { const g = grupos.find(g => g.ps.includes(pA)); if (g) abrir(g); }); irA(pA.z); }
+else if (q.get('sector')) irA(q.get('sector'));
+
+// ---------- Dentro de un iframe (p. ej. en grandvalira.com): que el plano no atrape el desplazamiento de la página ----------
+// Ordenador: la rueda sola baja la página y Ctrl + rueda acerca el plano. Pantalla táctil: un dedo baja la página y dos mueven el plano.
+const aviso = document.getElementById('aviso');
+let avisoT = null;
+function avisar(txt) {
+  aviso.textContent = txt; aviso.style.display = 'block'; aviso.style.opacity = 1;
+  clearTimeout(avisoT); avisoT = setTimeout(() => aviso.style.opacity = 0, 1600);
+}
+if (window.self !== window.top) {
+  mapa.scrollWheelZoom.disable();
+  let acum = 0, espera = null;
+  mapa.getContainer().addEventListener('wheel', e => {
+    if (!(e.ctrlKey || e.metaKey)) { avisar(/Mac|iP/.test(navigator.platform) ? 'Usa ⌘ + rueda para acercar el plano' : 'Usa Ctrl + rueda para acercar el plano'); return; }
+    e.preventDefault();   // si no, Ctrl + rueda ampliaría toda la página
+    acum += e.deltaY;
+    const pt = mapa.mouseEventToContainerPoint(e);
+    clearTimeout(espera);
+    espera = setTimeout(() => { mapa.setZoomAround(pt, mapa.getZoom() - acum / 100); acum = 0; }, 40);
+  }, { passive: false });
+  if (!conRaton) {
+    mapa.dragging.disable();   // Leaflet deja entonces que un dedo desplace la página; el zoom con dos dedos también mueve el plano
+    mapa.getContainer().addEventListener('touchmove', e => { if (e.touches.length === 1) avisar('Usa dos dedos para mover el plano'); }, { passive: true });
+  }
+}
+window.listo = true;
+</script>
+</body>
+</html>

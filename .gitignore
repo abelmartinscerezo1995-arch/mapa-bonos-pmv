@@ -5,3 +5,5 @@ Thumbs.db
 # La hoja de datos y los PDF originales viven fuera del repo (mapa_bonos/)
 *.xlsx
 *.pdf
+# Descargas del plano propio (se rehacen con herramientas/plano/descargar.py)
+herramientas/plano/cache/
