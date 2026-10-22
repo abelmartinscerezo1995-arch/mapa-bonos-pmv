@@ -50,18 +50,19 @@ Después: **doble clic en `Actualizar mapa.bat`**. Revisa el Excel, explica cual
 3. Si el plano ha cambiado de dibujo, revisa las X/Y de la hoja **Núcleos plano**. Los puntos sin posición salen en la lista con «Aún no está en el plano».
 4. `Actualizar mapa.bat`.
 
-## Plano propio (prueba): Grandvalira y Pal Arinsal
+## Plano propio (prueba): Grandvalira, Pal Arinsal y Ordino Arcalís
 
 En `plano/` hay un plano propio por estación: relieve de invierno, pistas y remontes, y **solo** restaurantes y escuelas. Está en pruebas y aún no sustituye al mapa de los bonos.
 
-- **Grandvalira:** `plano/` · **Pal Arinsal:** `plano/?e=PA`
+- Un solo enlace, `plano/`, con un botón por estación arriba (*Grandvalira · Pal Arinsal · Ordino Arcalís*). Al cambiar de estación se conservan la pestaña y el filtro.
+- Enlace directo a una estación: `plano/?e=PA`. Para el enlace de un bono, `plano/?e=PA&solo=1` deja solo esa estación arriba.
 - **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos* (los que no tienen ningún restaurante en esa estación no salen, p. ej. Self en PA), y **Escuela**. Botones de sector.
 - De lejos, una burbuja por sector; al acercar, cada restaurante con su nombre (sin tocar nada). Los del mismo edificio comparten pin.
-- Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com).
+- Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com, ordinoarcalis.com).
 - Dentro de un iframe no atrapa el desplazamiento de la página: Ctrl + rueda (ordenador) o dos dedos (móvil) para mover el plano.
-- Parámetros: `e` (`GV`, `PA`), `menu` (`express`, `self`, `carta`, `todos`), `modo=escuela`, `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código), `c=lat,lon,zoom`.
+- Parámetros: `e` (`GV`, `PA`, `OA`), `solo=1`, `menu` (`express`, `self`, `carta`, `todos`), `modo=escuela`, `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código), `c=lat,lon,zoom`.
 
-Cada estación tiene su carpeta (`plano/GV/`, `plano/PA/`) con el relieve, las líneas y los puntos. Sus datos (zona del relieve, pueblos, orden de los sectores, página de la escuela) están en `herramientas/plano/comun.py`.
+Cada estación tiene su carpeta (`plano/GV/`, `plano/PA/`, `plano/OA/`) con el relieve, las líneas y los puntos. Sus datos (zona del relieve, pueblos, orden de los sectores, página de la escuela) están en `herramientas/plano/comun.py`.
 
 Cómo se mantiene:
 
@@ -71,7 +72,7 @@ Cómo se mantiene:
 | Cada temporada (pistas nuevas) | `python herramientas/plano/descargar.py` y después `python herramientas/plano/lineas.py`. Revisa el plano contra el oficial: las pistas salen de OpenStreetMap. |
 | Cambiar la zona o el estilo del relieve | `python herramientas/plano/relieve.py` (alrededor de un minuto por estación; necesita numpy, scipy y Pillow). |
 | Comprobar que todo se lee bien | `python herramientas/plano/revisar.py` (necesita Playwright y Edge): prueba 9 tamaños de pantalla y avisa si algún nombre se pisa o se esconde. |
-| Añadir otra estación (p. ej. OA) | Copia un bloque en `herramientas/plano/comun.py`, ejecuta `descargar.py OA`, `relieve.py OA`, `lineas.py OA` y `puntos.py OA`, y añade `'OA'` a `ESTACIONES` en `plano/index.html`. |
+| Añadir otra estación | Copia un bloque en `herramientas/plano/comun.py` con su código (p. ej. `XX`), ejecuta `descargar.py XX`, `relieve.py XX`, `lineas.py XX` y `puntos.py XX`, y añade su código y nombre a `ESTACIONES` en `plano/index.html` (son los botones de arriba). |
 
 Todos los programas aceptan el código de una estación para hacer solo esa (`python herramientas/plano/lineas.py PA`); sin nada, hacen todas.
 

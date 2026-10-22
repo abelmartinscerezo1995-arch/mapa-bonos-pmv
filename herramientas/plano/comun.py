@@ -2,7 +2,7 @@
 
 Cada programa trabaja con las estaciones que le digas (python herramientas/plano/lineas.py PA) o, sin decir nada, con todas.
 Para añadir una estación: copia un bloque de ESTACIONES, cambia sus datos, ejecuta descargar.py, relieve.py, lineas.py y puntos.py
-con su código y añádelo también a ESTACIONES en plano/index.html."""
+con su código y añade su código y nombre a ESTACIONES en plano/index.html (son los botones de arriba)."""
 import math
 import os
 import sys
@@ -39,6 +39,15 @@ ESTACIONES = {
         sectores=["Pal", "Arinsal"],
         burbujas=13,
         escuelas="https://www.palarinsal.com/es/clases-escuelas/escuela-invierno",
+    ),
+    "OA": dict(
+        nombre="Ordino Arcalís",
+        zona=(8256, 6039, 8263, 6046),
+        caja=(42.600, 1.440, 42.670, 1.540),
+        pueblos={"el Serrat": "El Serrat", "Llorts": "Llorts"},
+        sectores=["Ordino Arcalís"],
+        burbujas=13,
+        escuelas="https://www.ordinoarcalis.com/es/escuela",
     ),
 }
 

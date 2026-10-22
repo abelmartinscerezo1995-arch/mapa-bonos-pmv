@@ -1,0 +1,5 @@
+// Generado por herramientas/plano/puntos.py a partir de datos.js (Excel). No editar a mano.
+window.PLANO_ESTACION = {"cod": "OA", "nombre": "Ordino Arcalís", "sectores": ["Ordino Arcalís"], "burbujas": 13, "rel": [[42.56926437219385, 1.40625], [42.698585891698414, 1.58203125]]};
+window.PLANO_PUNTOS = [{"id":"E-OA-01","t":"escuela","n":"Escuela Ordino Arcalís – Els Planells","u":"Edifici Els Planells (2.025 m)","z":"Ordino Arcalís","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes","c":[42.629,1.498],"w":"https://www.ordinoarcalis.com/es/escuela"},
+{"id":"R-OA-01","t":"restaurante","n":"Restaurant Hortell","u":"L'Hortell (1.940 m)","z":"Ordino Arcalís","x":true,"s":false,"l":"Restaurante","nota":"Maxi bikini + patatas + bebida","c":[42.631795,1.499711],"w":"https://www.ordinoarcalis.com/es/restaurantes/lhortell"},
+{"id":"R-OA-02","t":"restaurante","n":"Restaurant Planells","u":"Els Planells (2.025 m)","z":"Ordino Arcalís","x":true,"s":false,"l":"Restaurante","nota":"Bocadillo + patatas + bebida","c":[42.629035,1.497955],"w":"https://www.ordinoarcalis.com/es/restaurantes/els-planells"}];

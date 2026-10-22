@@ -10,9 +10,14 @@
   :root { --navy: #0b2b4c; --azul: #0a6ebd; --express: #d0450e; --self: #29843c; --carta: #6c7884; --fondo: #e9edf1; --linea: #dde3ea; }
   html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: #14202b; }
   body { display: flex; flex-direction: column; height: 100dvh; }
-  header { flex: none; height: 50px; background: var(--navy); color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 0 14px; }
-  header small { opacity: .75; font-size: 11px; }
-  header b { font-size: 16px; }
+  header { flex: none; background: var(--navy); color: #fff; padding: 6px 10px 8px; }
+  header small { display: block; opacity: .75; font-size: 11px; margin: 0 4px 5px; }
+  /* Botones de estación (cada uno es un enlace a la misma página con ?e=) */
+  .estaciones { display: flex; gap: 6px; }
+  .estaciones a { flex: 1 1 auto; min-width: 0; text-align: center; padding: 5px 8px; border: 1px solid rgba(255,255,255,.4); border-radius: 999px;
+                  color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .estaciones a[aria-current="page"] { background: #fff; border-color: #fff; color: var(--navy); }
+  .estaciones a:not([aria-current]):hover { background: rgba(255,255,255,.12); }
   nav.tabs { flex: none; display: flex; background: #fff; border-bottom: 1px solid var(--linea); }
   nav.tabs button { flex: 1; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: #5b6773; padding: 10px 0 8px; border-bottom: 3px solid transparent; cursor: pointer; }
   nav.tabs button[aria-selected="true"] { color: var(--azul); border-bottom-color: var(--azul); }
@@ -62,7 +67,8 @@
                align-items: center; justify-content: center; font-size: 11.5px; padding: 0 3px; box-sizing: border-box; }
   .burbuja svg { width: 14px; height: 14px; fill: #fff; }
   .ley { position: absolute; left: 10px; bottom: 22px; z-index: 500; background: rgba(255,255,255,.94); border-radius: 10px; padding: 5px 9px;
-         box-shadow: 0 1px 4px rgba(0,0,0,.2); font-size: 11px; color: #222; display: flex; gap: 8px; align-items: center; transition: opacity .2s; }
+         box-shadow: 0 1px 4px rgba(0,0,0,.2); font-size: 11px; color: #222; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center;
+         max-width: calc(100% - 20px); box-sizing: border-box; transition: opacity .2s; }
   .ley i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
   .ficha { position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 1001; background: #fff; border-radius: 14px; padding: 14px 44px 12px 16px;
            box-shadow: 0 4px 18px rgba(0,0,0,.25); display: none; max-height: 48%; overflow: auto; box-sizing: border-box; }
@@ -91,17 +97,21 @@
     .filtros button { padding: 5px 6px; font-size: 11.5px; }
     .filtros button i { width: 8px; height: 8px; margin-right: 4px; }
     .filtros button span { margin-left: 3px; }
+    .estaciones { gap: 4px; }
+    .estaciones a { padding: 5px 4px; font-size: 12px; }
   }
   /* Pantalla baja (móvil en horizontal, iframe bajo): sin cabecera ni aviso de entrada, para dejar sitio al plano */
   @media (max-height: 500px) {
-    header, .aviso { display: none; }
+    header small, .aviso { display: none; }
+    header { padding: 5px 10px; }
+    .estaciones a { padding: 3px 8px; }
     nav.tabs button { padding: 6px 0 5px; }
     .ficha { max-height: 62%; }
   }
 </style>
 </head>
 <body>
-<header><small id="subtitulo">Clases colectivas + Menú</small><b>Tu pack en el mapa</b></header>
+<header><small>Tu pack en el mapa · Clases colectivas + Menú</small><nav class="estaciones" id="estaciones" aria-label="Estación"></nav></header>
 <nav class="tabs" role="tablist">
   <button role="tab" data-modo="comer" aria-selected="true">Dónde comer</button>
   <button role="tab" data-modo="escuela" aria-selected="false">Escuela</button>
@@ -117,17 +127,17 @@
 <script>
 // Estación: ?e=PA (sin nada, Grandvalira; con ?abrir=R-PA-01, la de ese punto). Cada estación tiene su carpeta con el relieve,
 // las líneas de OpenStreetMap (herramientas/plano/lineas.py) y los puntos del Excel (herramientas/plano/puntos.py).
-const ESTACIONES = ['GV', 'PA'];
+// Aquí, el código y el nombre de los botones de arriba (los demás datos de cada estación están en herramientas/plano/comun.py).
+const ESTACIONES = { GV: 'Grandvalira', PA: 'Pal Arinsal', OA: 'Ordino Arcalís' };
 {
   const q = new URLSearchParams(location.search), pedida = (q.get('e') || q.get('estacion') || (q.get('abrir') || '').split('-')[1] || '').toUpperCase();
-  const e = ESTACIONES.includes(pedida) ? pedida : 'GV';
+  const e = Object.prototype.hasOwnProperty.call(ESTACIONES, pedida) ? pedida : 'GV';
   document.write(`<script src="${e}/lineas.js"><\/script><script src="${e}/puntos.js"><\/script>`);
 }
 </script>
 <script>
 const EST = window.PLANO_ESTACION, D = Object.assign({ puntos: window.PLANO_PUNTOS }, window.PLANO_LINEAS);
 document.title = 'Plano ' + EST.nombre;
-document.getElementById('subtitulo').textContent = EST.nombre + ' · Clases colectivas + Menú';
 const COL = { novice: '#1e9e4a', easy: '#1a73c7', intermediate: '#d93a3a', advanced: '#1d1d1d', expert: '#1d1d1d', freeride: '#e07b00', '?': '#8a8f96' };
 // Botones de sector: en el orden de herramientas/plano/comun.py y, al final, cualquier otro que venga en el Excel
 const SECTORES = [...new Set([...EST.sectores, ...D.puntos.map(p => p.z)])];
@@ -196,6 +206,10 @@ D.remontes.forEach(r => {
   }
 });
 ['carretera', 'zona', 'borde', 'pista', 'bordeCorta', 'corta', 'remonteBorde', 'remonte', 'estacion'].forEach(k => capas[k].addTo(mapa));
+
+// Freeride en la leyenda solo si la estación tiene pistas de freeride (OA)
+if (D.pistas.some(p => p.d === 'freeride'))
+  document.querySelector('#ley span:last-child').insertAdjacentHTML('beforebegin', `<span><i style="background:${COL.freeride}"></i>Freeride</span>`);
 
 D.pueblos.forEach(p => L.marker(p.c, { icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }), interactive: false, keyboard: false })
   .bindTooltip(p.n, { permanent: true, direction: 'center', className: 'pueblo' }).addTo(mapa));
@@ -495,6 +509,21 @@ function cambiarModo(m) {
   nivel(); pintar();
 }
 document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { cambiarModo(b.dataset.modo); if (sinNadaALaVista()) vistaInicial(); });
+// Botones de estación: cada uno vuelve a abrir esta página con otra estación (?e=), conservando la pestaña y el filtro si allí
+// existen; el de la estación actual vuelve a enseñarla entera. Con ?solo=1 (p. ej. en el enlace de un bono) solo sale la del enlace.
+function pintarEstaciones() {
+  const nav = document.getElementById('estaciones'), solo = q.get('solo') === '1';
+  nav.innerHTML = Object.entries(ESTACIONES).filter(([k]) => !solo || k === EST.cod)
+    .map(([k, n]) => `<a href="?e=${k}"${k === EST.cod ? ' aria-current="page"' : ''}>${esc(n)}</a>`).join('');
+  nav.querySelectorAll('a').forEach(a => a.onclick = ev => {
+    ev.preventDefault();
+    const cod = new URLSearchParams(a.getAttribute('href').slice(1)).get('e');
+    if (cod === EST.cod) { cerrar(); vistaInicial(); return; }
+    const p = new URLSearchParams({ e: cod });
+    if (modo === 'escuela') p.set('modo', 'escuela'); else if (menu !== Object.keys(MENUS)[0]) p.set('menu', menu);
+    location.href = '?' + p;
+  });
+}
 
 // ---------- Qué líneas se ven según lo cerca que estés ----------
 const pon = (capa, si) => si ? (mapa.hasLayer(capa) || capa.addTo(mapa)) : mapa.removeLayer(capa);
@@ -526,7 +555,8 @@ function ajustarMin() {
 }
 // Vista de entrada: toda la estación; en Dónde comer, alejando un poco más si alguna burbuja de sector se sale de la pantalla
 function vistaInicial() {
-  mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], animate: false });
+  // maxZoom 15: si los puntos están muy juntos (OA), que se vea algo de estación alrededor
+  mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], maxZoom: 15, animate: false });
   for (let i = 0; i < 12 && burbujas.length; i++) {
     const tam = mapa.getSize(), rs = burbujas.map(b => rect(b.getElement().firstChild));
     const l = Math.min(...rs.map(r => r.l)), r = Math.max(...rs.map(r => r.r)), t = Math.min(...rs.map(r => r.t)), b = Math.max(...rs.map(r => r.b));
@@ -550,6 +580,7 @@ mapa.on('zoomend', () => { nivel(); pintar(); });
 mapa.on('moveend', colocar);
 mapa.on('resize', () => { ajustarMin(); colocar(); });
 new ResizeObserver(() => mapa.invalidateSize({ animate: false })).observe(mapa.getContainer());   // p. ej. si cambia el alto del iframe
+pintarEstaciones();
 cambiarModo(modo);
 // ?c=lat,lon,zoom (si viene mal escrito, se ignora y se enseña toda la estación)
 const c = (q.get('c') || '').split(',').map(Number);
