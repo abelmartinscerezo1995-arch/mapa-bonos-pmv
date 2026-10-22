@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plano Grandvalira</title>
 <link rel="icon" href="data:,">
+<script>
+// Estación: ?e=PA (sin nada, Grandvalira; con ?abrir=R-PA-01, la de ese punto). Cada estación tiene su carpeta con el relieve,
+// las líneas de OpenStreetMap (herramientas/plano/lineas.py) y los puntos del Excel (herramientas/plano/puntos.py).
+// Aquí, el código y el nombre de los botones de arriba (los demás datos de cada estación están en herramientas/plano/comun.py).
+const ESTACIONES = { GV: 'Grandvalira', PA: 'Pal Arinsal', OA: 'Ordino Arcalís' };
+const COD = (() => {
+  const q = new URLSearchParams(location.search), pedida = (q.get('e') || q.get('estacion') || (q.get('abrir') || '').split('-')[1] || '').toUpperCase();
+  return Object.prototype.hasOwnProperty.call(ESTACIONES, pedida) ? pedida : 'GV';
+})();
+// Los datos de la estación empiezan a bajar ya, a la vez que Leaflet (se ejecutan más abajo, después de Leaflet)
+document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link rel="preload" as="script" href="${COD}/puntos.js">`);
+</script>
 <link rel="stylesheet" href="leaflet/leaflet.css">
 <style>
   :root { --navy: #0b2b4c; --azul: #0a6ebd; --express: #d0450e; --self: #29843c; --carta: #6c7884; --fondo: #e9edf1; --linea: #dde3ea; }
@@ -124,17 +136,7 @@
   <div class="ficha" id="ficha" role="dialog" aria-live="polite"><button class="x" aria-label="Cerrar">×</button><div></div></div>
 </div>
 <script src="leaflet/leaflet.js"></script>
-<script>
-// Estación: ?e=PA (sin nada, Grandvalira; con ?abrir=R-PA-01, la de ese punto). Cada estación tiene su carpeta con el relieve,
-// las líneas de OpenStreetMap (herramientas/plano/lineas.py) y los puntos del Excel (herramientas/plano/puntos.py).
-// Aquí, el código y el nombre de los botones de arriba (los demás datos de cada estación están en herramientas/plano/comun.py).
-const ESTACIONES = { GV: 'Grandvalira', PA: 'Pal Arinsal', OA: 'Ordino Arcalís' };
-{
-  const q = new URLSearchParams(location.search), pedida = (q.get('e') || q.get('estacion') || (q.get('abrir') || '').split('-')[1] || '').toUpperCase();
-  const e = Object.prototype.hasOwnProperty.call(ESTACIONES, pedida) ? pedida : 'GV';
-  document.write(`<script src="${e}/lineas.js"><\/script><script src="${e}/puntos.js"><\/script>`);
-}
-</script>
+<script>document.write(`<script src="${COD}/lineas.js"><\/script><script src="${COD}/puntos.js"><\/script>`);</script>
 <script>
 const EST = window.PLANO_ESTACION, D = Object.assign({ puntos: window.PLANO_PUNTOS }, window.PLANO_LINEAS);
 document.title = 'Plano ' + EST.nombre;
@@ -205,7 +207,8 @@ D.remontes.forEach(r => {
     telecabinas.push({ l, n: /^tele/i.test(n) ? n : (r.t === 'cable_car' ? 'Teleférico ' : 'Telecabina ') + n });
   }
 });
-['carretera', 'zona', 'borde', 'pista', 'bordeCorta', 'corta', 'remonteBorde', 'remonte', 'estacion'].forEach(k => capas[k].addTo(mapa));
+// Al arrancar solo las que siempre se ven; las demás (zonas, remontes, enlaces cortos...) las añade nivel() según el zoom
+capas.carretera.addTo(mapa); capas.pista.addTo(mapa);
 
 // Freeride en la leyenda solo si la estación tiene pistas de freeride (OA)
 if (D.pistas.some(p => p.d === 'freeride'))
@@ -364,6 +367,7 @@ function rect(el) {
   return { l: r.left - c.left - 3, t: r.top - c.top - 3, r: r.right - c.left + 3, b: r.bottom - c.top + 3 };
 }
 function colocar() {
+  if (!document.querySelector('.leaflet-control-zoom')) return;   // la página se está cerrando: ya no hay nada que colocar
   const tam = mapa.getSize();
   const fijos = burbujas.map(b => rect(b.getElement().firstChild));
   fijos.push(rect(document.querySelector('.leaflet-control-zoom')));
@@ -573,7 +577,12 @@ if (Object.prototype.hasOwnProperty.call(MENUS, q.get('menu'))) menu = q.get('me
 // ?abrir=<id>: va a ese punto y abre su ficha
 const pA = D.puntos.find(p => p.id === q.get('abrir'));
 if (pA) { modo = pA.t === 'escuela' ? 'escuela' : 'comer'; if (modo === 'comer' && !MENUS[menu].vale(pA)) menu = 'todos'; }
-mapa.setView(REL.getCenter(), 13, { animate: false });
+// Primera vista: ya la de entrada (o la de ?c=), para que el relieve que se va a ver empiece a bajar cuanto antes.
+// Antes se pintan las filas de botones, que cambian el alto del plano.
+pintarFiltros(); pintarSectores();
+const c = (q.get('c') || '').split(',').map(Number), conC = c.length >= 2 && c.every(Number.isFinite);   // ?c=lat,lon,zoom (mal escrito: se ignora)
+if (conC) mapa.setView([c[0], c[1]], c[2] || 15, { animate: false });
+else mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], maxZoom: 15, animate: false });
 ajustarMin();
 mapa.on('zoomstart', () => { paneEtq.classList.add('quieto'); paneGuias.classList.add('quieto'); });
 mapa.on('zoomend', () => { nivel(); pintar(); });
@@ -582,10 +591,7 @@ mapa.on('resize', () => { ajustarMin(); colocar(); });
 new ResizeObserver(() => mapa.invalidateSize({ animate: false })).observe(mapa.getContainer());   // p. ej. si cambia el alto del iframe
 pintarEstaciones();
 cambiarModo(modo);
-// ?c=lat,lon,zoom (si viene mal escrito, se ignora y se enseña toda la estación)
-const c = (q.get('c') || '').split(',').map(Number);
-if (c.length >= 2 && c.every(Number.isFinite)) mapa.setView([c[0], c[1]], c[2] || 15, { animate: false });
-else vistaInicial();
+if (!conC) vistaInicial();   // ajusta la entrada para que quepan las burbujas de sector
 mapa.once('zoomstart movestart', () => document.getElementById('aviso').style.opacity = 0);
 if (pA) irA(pA.z, () => { const g = grupos.find(g => g.ps.includes(pA)); if (g) abrir(g); });
 else if (q.get('sector')) irA(q.get('sector'));

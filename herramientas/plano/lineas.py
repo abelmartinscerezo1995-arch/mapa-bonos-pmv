@@ -59,7 +59,7 @@ def lineas(est):
         if t.get("piste:type") == "downhill":
             dif = t.get("piste:difficulty") or "?"
             if g[0] == g[-1] or t.get("area") == "yes":
-                zonas.append({"d": dif, "c": coords(g, 3)})
+                zonas.append({"d": dif, "c": coords(g, 8)})   # zona: relleno muy tenue, no necesita detalle
             else:
                 c = coords(g, 1.5)
                 nombre = t.get("piste:name") or t.get("name") or ""
@@ -69,7 +69,7 @@ def lineas(est):
             remontes.append({"t": t["aerialway"], "n": t.get("name") or "", "c": coords(g, 1)})
 
     extra = json.load(open(os.path.join(est.cache, "extra.json"), encoding="utf-8"))["elements"]
-    carreteras = [coords(e["geometry"], 4) for e in extra if e["type"] == "way" and e.get("tags", {}).get("highway") in ("trunk", "primary")]
+    carreteras = [coords(e["geometry"], 10) for e in extra if e["type"] == "way" and e.get("tags", {}).get("highway") in ("trunk", "primary")]
     pueblos = [{"n": est.pueblos[e["tags"]["name"]], "c": [e["lat"], e["lon"]]}
                for e in extra if e["type"] == "node" and e["tags"].get("name") in est.pueblos]
 
