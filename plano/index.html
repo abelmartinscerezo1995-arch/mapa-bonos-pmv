@@ -109,7 +109,7 @@
 <div class="fila filtros" id="filtros"></div>
 <div class="fila sectores" id="sectores"></div>
 <div id="mapa">
-  <div class="ley" id="ley"><span><i style="background:#1e9e4a"></i>Verde</span><span><i style="background:#1a73c7"></i>Azul</span><span><i style="background:#d93a3a"></i>Roja</span><span><i style="background:#1d1d1d"></i>Negra</span><span><i style="background:#2d3238;height:2px"></i>Remonte</span></div>
+  <div class="ley" id="ley"><span><i style="background:#1e9e4a"></i>Verde</span><span><i style="background:#1a73c7"></i>Azul</span><span><i style="background:#d93a3a"></i>Roja</span><span><i style="background:#1d1d1d"></i>Negra</span><span><i style="background:repeating-linear-gradient(90deg,#2d3238 0 4px,transparent 4px 7px);height:2px"></i>Remonte</span></div>
   <div class="aviso" id="aviso">Toca un sector o acerca el plano</div>
   <div class="ficha" id="ficha" role="dialog" aria-live="polite"><button class="x" aria-label="Cerrar">×</button><div></div></div>
 </div>
@@ -174,8 +174,8 @@ D.pistas.forEach(p => {
 });
 const telecabinas = [];
 D.remontes.forEach(r => {
-  L.polyline(r.c, { renderer: ren.remonteBorde, color: '#fff', weight: 3.6, opacity: .9, interactive: false }).addTo(capas.remonteBorde);
-  const l = L.polyline(r.c, { renderer: ren.remonte, color: '#2d3238', weight: 1.6, interactive: false }).addTo(capas.remonte);
+  L.polyline(r.c, { renderer: ren.remonteBorde, color: '#fff', weight: 3.8, opacity: .9, interactive: false }).addTo(capas.remonteBorde);
+  const l = L.polyline(r.c, { renderer: ren.remonte, color: '#2d3238', weight: 1.8, dashArray: '5 4', lineCap: 'butt', interactive: false }).addTo(capas.remonte);
   [r.c[0], r.c[r.c.length - 1]].forEach(c => L.circleMarker(c, { renderer: ren.estacion, radius: 2.6, color: '#2d3238', weight: 1.4, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(capas.estacion));
   if (r.t === 'gondola' || r.t === 'cable_car') telecabinas.push({ l, n: r.n.replace(/^TC\d*\s*/, 'Telecabina ') });
 });
@@ -345,10 +345,10 @@ function colocar() {
     else g.etq.setLatLng(mapa.containerPointToLatLng([g.x + g.r + 3, g.y - g.h / 2]));   // sin sitio: escondido, sale al pasar el ratón
     el.classList.toggle('oculta', !g.caja);
     if (g.raya) { capaPuntos.removeLayer(g.raya); g.raya = null; }
-    if (g.guia) {   // rayita discontinua azul marino con borde blanco (para no confundirla con un remonte)
+    if (g.guia) {   // rayita continua azul marino con borde blanco (los remontes son discontinuos)
       const ll = [mapa.containerPointToLatLng(g.guia.slice(0, 2)), mapa.containerPointToLatLng(g.guia.slice(2))];
       g.raya = L.layerGroup([L.polyline(ll, { renderer: ren.guias, color: '#fff', weight: 4, opacity: .9, interactive: false }),
-        L.polyline(ll, { renderer: ren.guias, color: '#0b2b4c', weight: 1.6, dashArray: '4 3', interactive: false })]).addTo(capaPuntos);
+        L.polyline(ll, { renderer: ren.guias, color: '#0b2b4c', weight: 1.4, interactive: false })]).addTo(capaPuntos);
     }
   });
   paneEtq.classList.remove('quieto'); paneGuias.classList.remove('quieto');
