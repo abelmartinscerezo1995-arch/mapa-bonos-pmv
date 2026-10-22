@@ -20,7 +20,7 @@ echo.
 echo  2. Abriendo la vista previa en el navegador. Revisa que todo este bien.
 start "" "index.html"
 echo.
-git diff --quiet -- datos.js plano/puntos.js
+git diff --quiet -- datos.js "plano/*/puntos.js"
 if not errorlevel 1 (
   echo  No ha cambiado nada respecto a lo publicado.
   echo.
@@ -34,7 +34,7 @@ if /i not "%RESP%"=="S" (
   pause
   exit /b 0
 )
-git add datos.js plano/puntos.js
+git add datos.js "plano/*/puntos.js"
 git commit -m "Actualizar datos del mapa desde el Excel" >nul
 git push
 if errorlevel 1 (

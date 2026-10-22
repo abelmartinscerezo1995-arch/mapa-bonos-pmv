@@ -50,24 +50,30 @@ Después: **doble clic en `Actualizar mapa.bat`**. Revisa el Excel, explica cual
 3. Si el plano ha cambiado de dibujo, revisa las X/Y de la hoja **Núcleos plano**. Los puntos sin posición salen en la lista con «Aún no está en el plano».
 4. `Actualizar mapa.bat`.
 
-## Plano propio de Grandvalira (prueba)
+## Plano propio (prueba): Grandvalira y Pal Arinsal
 
-En `plano/` hay un plano propio, solo para GV: relieve de invierno, pistas y remontes, y **solo** restaurantes y escuelas. Está en pruebas y aún no sustituye al mapa de los bonos.
+En `plano/` hay un plano propio por estación: relieve de invierno, pistas y remontes, y **solo** restaurantes y escuelas. Está en pruebas y aún no sustituye al mapa de los bonos.
 
-- **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos*, y **Escuela**. Botones de sector.
+- **Grandvalira:** `plano/` · **Pal Arinsal:** `plano/?e=PA`
+- **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos* (los que no tienen ningún restaurante en esa estación no salen, p. ej. Self en PA), y **Escuela**. Botones de sector.
 - De lejos, una burbuja por sector; al acercar, cada restaurante con su nombre (sin tocar nada). Los del mismo edificio comparten pin.
-- Ficha con los menús que acepta y enlace a su página en grandvalira.com.
+- Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com).
 - Dentro de un iframe no atrapa el desplazamiento de la página: Ctrl + rueda (ordenador) o dos dedos (móvil) para mover el plano.
-- Parámetros: `menu` (`express`, `self`, `carta`, `todos`), `modo=escuela`, `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha), `c=lat,lon,zoom`.
+- Parámetros: `e` (`GV`, `PA`), `menu` (`express`, `self`, `carta`, `todos`), `modo=escuela`, `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código), `c=lat,lon,zoom`.
+
+Cada estación tiene su carpeta (`plano/GV/`, `plano/PA/`) con el relieve, las líneas y los puntos. Sus datos (zona del relieve, pueblos, orden de los sectores, página de la escuela) están en `herramientas/plano/comun.py`.
 
 Cómo se mantiene:
 
 | Cuándo | Qué hacer |
 |---|---|
-| Cambia el Excel | Nada más: `Actualizar mapa.bat` también regenera `plano/puntos.js` (los puntos sin coordenadas no salen). |
+| Cambia el Excel | Nada más: `Actualizar mapa.bat` también regenera los puntos del plano de cada estación (los puntos sin coordenadas no salen). |
 | Cada temporada (pistas nuevas) | `python herramientas/plano/descargar.py` y después `python herramientas/plano/lineas.py`. Revisa el plano contra el oficial: las pistas salen de OpenStreetMap. |
-| Cambiar la zona o el estilo del relieve | `python herramientas/plano/relieve.py` (unos 50 s; necesita numpy, scipy y Pillow). |
+| Cambiar la zona o el estilo del relieve | `python herramientas/plano/relieve.py` (alrededor de un minuto por estación; necesita numpy, scipy y Pillow). |
 | Comprobar que todo se lee bien | `python herramientas/plano/revisar.py` (necesita Playwright y Edge): prueba 9 tamaños de pantalla y avisa si algún nombre se pisa o se esconde. |
+| Añadir otra estación (p. ej. OA) | Copia un bloque en `herramientas/plano/comun.py`, ejecuta `descargar.py OA`, `relieve.py OA`, `lineas.py OA` y `puntos.py OA`, y añade `'OA'` a `ESTACIONES` en `plano/index.html`. |
+
+Todos los programas aceptan el código de una estación para hacer solo esa (`python herramientas/plano/lineas.py PA`); sin nada, hacen todas.
 
 El enlace de cada restaurante sale de `mapa_bonos/propuestas/Restaurantes - fichas oficiales (propuesta).xlsx`.
 
@@ -95,7 +101,7 @@ ejemplo-embebido.html   ejemplo: el acordeón actual del bono con el mapa dentro
 planos/                 teselas de los planos oficiales (generadas desde los PDF)
 vendor/                 Leaflet 1.9.4 y el generador de QR (librerías libres)
 herramientas/           scripts que generan datos.js y las teselas (Python 3 + openpyxl, pymupdf, Pillow)
-plano/                  plano propio de GV (prueba): página, relieve, líneas de OSM y puntos
+plano/                  plano propio (prueba): página y una carpeta por estación (relieve, líneas de OSM y puntos)
 herramientas/plano/     scripts del plano propio (descargar, relieve, líneas, puntos, revisar)
 deploy/nginx.conf       configuración del servidor web
 docker-compose.yml      arranque en el servidor

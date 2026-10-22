@@ -1,10 +1,12 @@
 """Revisión automática del plano (necesita Playwright y Microsoft Edge): en cada tamaño de pantalla, la vista de entrada,
 cada sector con cada filtro y vistas al azar. Mide sobre lo que se ve de verdad (cajas del DOM): nombres que se pisan,
 nombres escondidos, burbujas cortadas, errores y archivos que fallan.
-Uso: python herramientas/plano/revisar.py [PUERTO] [pantalla ...]   (sin pantallas: todas)
+Uso: python herramientas/plano/revisar.py [GV PA ...] [pantalla ...] [puerto]   (sin estaciones: todas; sin pantallas: todas)
 Resultados en herramientas/plano/cache/revision/."""
 import json, os, random, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+
+from comun import ESTACIONES, estacion
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SALIDA = os.path.join(AQUI, "cache", "revision")
@@ -71,17 +73,20 @@ def mover(pg, js):
 
 
 def main():
-    puerto = sys.argv[1] if len(sys.argv) > 1 else "8790"
-    nombres = sys.argv[2:] or list(PANTALLAS)
+    args = sys.argv[1:]
+    estaciones = [a.upper() for a in args if a.upper() in ESTACIONES] or list(ESTACIONES)
+    puerto = next((a for a in args if a.isdigit()), "8790")
+    nombres = [a for a in args if a in PANTALLAS] or list(PANTALLAS)
     os.makedirs(SALIDA, exist_ok=True)
     srv = subprocess.Popen([sys.executable, os.path.join(AQUI, "servidor.py"), puerto], cwd=AQUI, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1.2)
-    URL = f"http://127.0.0.1:{puerto}/plano/index.html"
-    rnd = random.Random(42)
     try:
         with sync_playwright() as p:
             b = p.chromium.launch(channel="msedge", headless=True)
-            for nombre in nombres:
+            for est, nombre in [(e, n) for e in estaciones for n in nombres]:
+                URL = f"http://127.0.0.1:{puerto}/plano/index.html?e={est}"
+                S, O, N, E = estacion(est).caja
+                rnd = random.Random(42)
                 ctx = b.new_context(**PANTALLAS[nombre])
                 pg = ctx.new_page()
                 errores, fallos = [], []
@@ -89,15 +94,20 @@ def main():
                 pg.on("console", lambda m: m.type == "error" and errores.append("console: " + m.text))
                 pg.on("response", lambda r: r.status >= 400 and fallos.append(f"{r.status} {r.url}"))
                 pg.on("requestfailed", lambda r: fallos.append(f"falló {r.url} {r.failure}"))
-                out = {"pantalla": nombre, "entrada": {}, "sectores": {}, "azar": [], "filas": {}}
-                for etiqueta, q in (("express", ""), ("self", "?menu=self"), ("carta", "?menu=carta"), ("todos", "?menu=todos"), ("escuela", "?modo=escuela")):
+                out = {"estacion": est, "pantalla": nombre, "entrada": {}, "sectores": {}, "azar": [], "filas": {}}
+                menus = None
+                for etiqueta, q in (("express", ""), ("self", "&menu=self"), ("carta", "&menu=carta"), ("todos", "&menu=todos"), ("escuela", "&modo=escuela")):
+                    if menus is not None and etiqueta != "escuela" and etiqueta not in menus:
+                        continue   # filtro que esta estación no tiene (p. ej. Self fuera de GV)
                     t0 = time.time()
                     pg.goto(URL + q, wait_until="networkidle"); esperar(pg)
+                    if menus is None:
+                        menus = pg.evaluate("Object.keys(MENUS)")
                     a = pg.evaluate(AUDITAR); a["seg"] = round(time.time() - t0, 2)
                     a["alto_plano"] = pg.evaluate("mapa.getSize().y")
                     out["entrada"][etiqueta] = a
                     if etiqueta in ("express", "escuela"):
-                        pg.screenshot(path=os.path.join(SALIDA, f"{nombre}_entrada_{etiqueta}.png"))
+                        pg.screenshot(path=os.path.join(SALIDA, f"{est}_{nombre}_entrada_{etiqueta}.png"))
                     out["filas"][etiqueta] = pg.evaluate("""[...document.querySelectorAll('.fila')].filter(f => f.offsetHeight).map(f => ({ id: f.id, cabe: f.scrollWidth <= f.clientWidth + 1,
                         visibles: [...f.querySelectorAll('button')].filter(b => { const r = b.getBoundingClientRect(), c = f.getBoundingClientRect(); return r.right <= c.right + 1; }).length,
                         total: f.querySelectorAll('button').length }))""")
@@ -108,16 +118,16 @@ def main():
                     # Vistas al azar dentro del relieve
                     for i in range(8):
                         z = round(rnd.uniform(12, 17) * 4) / 4
-                        la, lo = rnd.uniform(42.525, 42.585), rnd.uniform(1.60, 1.74)
+                        la, lo = rnd.uniform(S, N), rnd.uniform(O, E)
                         mover(pg, f"mapa.setView([{la}, {lo}], {z}, {{ animate: false }})")
                         a = pg.evaluate(AUDITAR); a["vista"] = f"{etiqueta} {la:.4f},{lo:.4f} z{z}"
                         out["azar"].append(a)
                 out["errores"], out["fallos"] = errores, fallos
-                json.dump(out, open(os.path.join(SALIDA, f"{nombre}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+                json.dump(out, open(os.path.join(SALIDA, f"{est}_{nombre}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
                 tot = list(out["entrada"].values()) + list(out["sectores"].values()) + out["azar"]
                 cortadas = sum(len(a["burFuera"]) for a in out["entrada"].values())
                 reales = [f for f in fallos if "ERR_ABORTED" not in f]   # ERR_ABORTED = teselas que Leaflet cancela al hacer zoom: normal
-                print(f"{nombre:9} vistas {len(tot)} | nombres que se pisan {sum(len(a['solapes']) for a in tot)} | nombres escondidos {sum(len(a['ocultas']) for a in tot)}"
+                print(f"{est} {nombre:9} vistas {len(tot)} | nombres que se pisan {sum(len(a['solapes']) for a in tot)} | nombres escondidos {sum(len(a['ocultas']) for a in tot)}"
                       f" | burbujas cortadas al entrar {cortadas} | errores {len(errores)} | archivos que fallan {len(reales)}", flush=True)
                 ctx.close()
             b.close()
