@@ -1,4 +1,5 @@
 // Generado por herramientas/plano/puntos.py a partir de datos.js (Excel). No editar a mano.
+window.PLANO_ESTACION = {"cod": "GV", "nombre": "Grandvalira", "sectores": ["Encamp", "Canillo", "El Tarter", "Soldeu", "Grau Roig", "Peretol", "Pas de la Casa"], "burbujas": 13.75, "rel": [[42.43967417814943, 1.5380859375], [42.66628070564927, 1.8017578125]]};
 window.PLANO_PUNTOS = [{"id":"E-GV-01","t":"escuela","n":"Escuela Soldeu – Espiolets","u":"Espiolets (2.250 m)","z":"Soldeu","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes y sábados","c":[42.564122,1.663431],"w":"https://www.grandvalira.com/es/escuelas"},
 {"id":"E-GV-02","t":"escuela","n":"Escuela El Tarter – Riba Escorxada","u":"Riba Escorxada (2.100 m)","z":"El Tarter","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes y sábados","c":[42.568155,1.641816],"w":"https://www.grandvalira.com/es/escuelas"},
 {"id":"E-GV-03","t":"escuela","n":"Escuela Canillo – El Forn","u":"El Forn (2.000 m)","z":"Canillo","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes","c":[42.5544,1.6165],"w":"https://www.grandvalira.com/es/escuelas"},

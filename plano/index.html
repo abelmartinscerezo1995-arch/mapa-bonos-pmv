@@ -101,7 +101,7 @@
 </style>
 </head>
 <body>
-<header><small>Grandvalira · Clases colectivas + Menú</small><b>Tu pack en el mapa</b></header>
+<header><small id="subtitulo">Clases colectivas + Menú</small><b>Tu pack en el mapa</b></header>
 <nav class="tabs" role="tablist">
   <button role="tab" data-modo="comer" aria-selected="true">Dónde comer</button>
   <button role="tab" data-modo="escuela" aria-selected="false">Escuela</button>
@@ -114,13 +114,23 @@
   <div class="ficha" id="ficha" role="dialog" aria-live="polite"><button class="x" aria-label="Cerrar">×</button><div></div></div>
 </div>
 <script src="leaflet/leaflet.js"></script>
-<script src="lineas.js"></script>
-<script src="puntos.js"></script>
 <script>
-// Datos: líneas de OpenStreetMap (herramientas/plano/lineas.py) y puntos del Excel (herramientas/plano/puntos.py)
-const D = Object.assign({ puntos: window.PLANO_PUNTOS }, window.PLANO_LINEAS);
+// Estación: ?e=PA (sin nada, Grandvalira; con ?abrir=R-PA-01, la de ese punto). Cada estación tiene su carpeta con el relieve,
+// las líneas de OpenStreetMap (herramientas/plano/lineas.py) y los puntos del Excel (herramientas/plano/puntos.py).
+const ESTACIONES = ['GV', 'PA'];
+{
+  const q = new URLSearchParams(location.search), pedida = (q.get('e') || q.get('estacion') || (q.get('abrir') || '').split('-')[1] || '').toUpperCase();
+  const e = ESTACIONES.includes(pedida) ? pedida : 'GV';
+  document.write(`<script src="${e}/lineas.js"><\/script><script src="${e}/puntos.js"><\/script>`);
+}
+</script>
+<script>
+const EST = window.PLANO_ESTACION, D = Object.assign({ puntos: window.PLANO_PUNTOS }, window.PLANO_LINEAS);
+document.title = 'Plano ' + EST.nombre;
+document.getElementById('subtitulo').textContent = EST.nombre + ' · Clases colectivas + Menú';
 const COL = { novice: '#1e9e4a', easy: '#1a73c7', intermediate: '#d93a3a', advanced: '#1d1d1d', expert: '#1d1d1d', freeride: '#e07b00', '?': '#8a8f96' };
-const SECTORES = ['Encamp', 'Canillo', 'El Tarter', 'Soldeu', 'Grau Roig', 'Peretol', 'Pas de la Casa'];
+// Botones de sector: en el orden de herramientas/plano/comun.py y, al final, cualquier otro que venga en el Excel
+const SECTORES = [...new Set([...EST.sectores, ...D.puntos.map(p => p.z)])];
 const ICO_R = '<svg viewBox="0 0 24 24"><path d="M8.1 13.3 10.9 10.5 3.9 3.5a4 4 0 0 0 0 5.6zm6.8-1.8c1.5.7 3.7.2 5.3-1.4 1.9-1.9 2.3-4.7.8-6.1-1.4-1.4-4.2-1.1-6.1.8-1.6 1.6-2.1 3.8-1.4 5.3L3.7 19.9l1.4 1.4 6.9-6.9 6.9 6.9 1.4-1.4-6.9-6.9z"/></svg>';
 const ICO_E = '<svg viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -133,25 +143,28 @@ const MENUS = {
   todos:   { nombre: 'Todos',        color: '#0b2b4c', vale: () => true },
 };
 const REST = D.puntos.filter(p => p.t === 'restaurante');
+// Filtros sin ningún restaurante en esta estación (p. ej. Self fuera de Grandvalira): no se enseñan
+Object.keys(MENUS).forEach(k => { if (k !== 'todos' && !REST.some(MENUS[k].vale)) delete MENUS[k]; });
 // Qué incluye el Self: la nota más repetida entre los restaurantes que solo tienen Self
 const NOTA_SELF = (() => { const f = {}; REST.filter(p => p.s && !p.x && p.nota).forEach(p => f[p.nota] = (f[p.nota] || 0) + 1); return Object.keys(f).sort((a, b) => f[b] - f[a])[0] || ''; })();
 // Color(es) de un restaurante con el filtro actual: con "Todos", el de cada menú que acepta
 const colores = p => menu !== 'todos' ? [MENUS[menu].color] :
   [p.x && MENUS.express.color, p.s && MENUS.self.color, !p.x && !p.s && MENUS.carta.color].filter(Boolean);
+const coloresTodos = () => Object.keys(MENUS).filter(k => k !== 'todos').map(k => MENUS[k].color);
 const fondo = cs => cs.length === 1 ? cs[0] : `conic-gradient(${cs.map((c, i) => `${c} ${i * 100 / cs.length}% ${(i + 1) * 100 / cs.length}%`).join(',')})`;
 const nombre = p => p.n.replace(/\s+[–-]\s+.*$/, '');
 const peso = p => (p.x ? 0 : p.s ? 1 : 2);
 
-// Zona que cubre el relieve (teselas z14 8262..8273 x 6041..6054; la misma que en herramientas/plano/comun.py)
-const t2ll = (x, y, z) => { const n = 2 ** z; return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180]; };
-const REL = L.latLngBounds(t2ll(8262, 6055, 14), t2ll(8274, 6041, 14));
+// Zona que cubre el relieve (la de herramientas/plano/comun.py)
+const REL = L.latLngBounds(EST.rel);
 
 // Zoom máximo 16.5: más cerca el relieve ya se ve borroso (las teselas llegan a z15). La capa de relieve se queda en 17
 // porque Leaflet redondea el zoom (16.5 → 17) para elegir teselas, y si pasa del máximo de la capa no pinta ninguna.
 const mapa = L.map('mapa', { zoomSnap: 0.25, zoomDelta: 0.5, maxZoom: 16.5, maxBounds: REL, maxBoundsViscosity: 1, zoomControl: false, preferCanvas: true });
 L.control.zoom({ position: 'topright' }).addTo(mapa);
 mapa.attributionControl.setPrefix(false).addAttribution('© OpenStreetMap · relieve: AWS Terrain Tiles');
-L.tileLayer('relieve/{z}/{x}/{y}.webp', { minNativeZoom: 11, maxNativeZoom: 15, maxZoom: 17, bounds: REL, keepBuffer: 4 }).addTo(mapa);
+// bounds un pelín más pequeño que el relieve: si no, Leaflet pide también las teselas que solo tocan el borde (y no existen)
+L.tileLayer(EST.cod + '/relieve/{z}/{x}/{y}.webp', { minNativeZoom: 11, maxNativeZoom: 15, maxZoom: 17, bounds: REL.pad(-0.0005), keepBuffer: 4 }).addTo(mapa);
 // Cada tipo de línea en su propia capa del mapa (pane), para que el orden de dibujo no cambie al mostrar u ocultar
 const ren = {};
 ['carretera', 'zona', 'borde', 'pista', 'remonteBorde', 'remonte', 'estacion'].forEach((n, i) => {
@@ -177,7 +190,10 @@ D.remontes.forEach(r => {
   L.polyline(r.c, { renderer: ren.remonteBorde, color: '#fff', weight: 3.8, opacity: .9, interactive: false }).addTo(capas.remonteBorde);
   const l = L.polyline(r.c, { renderer: ren.remonte, color: '#2d3238', weight: 1.8, dashArray: '5 4', lineCap: 'butt', interactive: false }).addTo(capas.remonte);
   [r.c[0], r.c[r.c.length - 1]].forEach(c => L.circleMarker(c, { renderer: ren.estacion, radius: 2.6, color: '#2d3238', weight: 1.4, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(capas.estacion));
-  if (r.t === 'gondola' || r.t === 'cable_car') telecabinas.push({ l, n: r.n.replace(/^TC\d*\s*/, 'Telecabina ') });
+  if (r.t === 'gondola' || r.t === 'cable_car') {   // "TC8 Soldeu" → "Telecabina Soldeu"; "Arinsal-Pal" (cable_car) → "Teleférico Arinsal-Pal"
+    const n = r.n.replace(/^TC\d*\s*/, '');
+    telecabinas.push({ l, n: /^tele/i.test(n) ? n : (r.t === 'cable_car' ? 'Teleférico ' : 'Telecabina ') + n });
+  }
 });
 ['carretera', 'zona', 'borde', 'pista', 'bordeCorta', 'corta', 'remonteBorde', 'remonte', 'estacion'].forEach(k => capas[k].addTo(mapa));
 
@@ -185,7 +201,7 @@ D.pueblos.forEach(p => L.marker(p.c, { icon: L.divIcon({ className: '', html: ''
   .bindTooltip(p.n, { permanent: true, direction: 'center', className: 'pueblo' }).addTo(mapa));
 
 // ---------- Estado ----------
-let modo = 'comer', menu = 'express', selId = null;
+let modo = 'comer', menu = Object.keys(MENUS)[0], selId = null;
 const visibles = () => modo === 'escuela' ? D.puntos.filter(p => p.t === 'escuela') : REST.filter(MENUS[menu].vale);
 const capaPuntos = L.layerGroup().addTo(mapa);
 let grupos = [], burbujas = [];
@@ -272,10 +288,11 @@ function caben(ps, z) {
 }
 
 // ---------- Pintar puntos (al cambiar de zoom, de pestaña o de filtro) ----------
-const lejos = () => modo === 'comer' && mapa.getZoom() < 13.75;
+// De lejos (zoom por debajo de EST.burbujas, según el tamaño de la estación), una burbuja por sector
+const lejos = () => modo === 'comer' && mapa.getZoom() < EST.burbujas;
 function pintar() {
   capaPuntos.clearLayers();
-  mapa.getContainer().classList.toggle('sin-pueblos', mapa.getZoom() < 13.75);   // de lejos, los nombres ya van en las burbujas y las escuelas
+  mapa.getContainer().classList.toggle('sin-pueblos', mapa.getZoom() < EST.burbujas);   // de lejos, los nombres ya van en las burbujas y las escuelas
   const z = mapa.getZoom(), ps = visibles();
   // Restaurantes: de lejos, una burbuja por sector; de cerca, uno a uno, salvo los sectores donde aún no caben los nombres
   const porSector = {};
@@ -377,7 +394,8 @@ const ficha = document.getElementById('ficha');
 // La ficha está dentro del mapa: que tocarla, arrastrar o hacer scroll en ella no mueva ni cierre el plano
 L.DomEvent.disableClickPropagation(ficha);
 L.DomEvent.disableScrollPropagation(ficha);
-const enlace = p => p.w ? `<a class="web" href="${esc(p.w)}" target="_blank" rel="noopener">Más info en grandvalira.com ↗</a>` : '';
+const web = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return 'la web'; } };
+const enlace = p => /^https?:\/\//.test(p.w || '') ? `<a class="web" href="${esc(p.w)}" target="_blank" rel="noopener">Más info en ${esc(web(p.w))} ↗</a>` : '';
 const badges = p => (p.x ? '<span class="badge ex">Menú Express</span>' : '') + (p.s ? '<span class="badge se">Menú Self</span>' : '') + (!p.x && !p.s ? '<span class="badge ca">A la carta</span>' : '');
 const incluye = p => menu === 'self' ? NOTA_SELF : menu === 'carta' ? p.l : p.x ? p.nota : p.s ? NOTA_SELF : p.l;
 function abrir(g) {
@@ -407,17 +425,20 @@ mapa.on('click', cerrar);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ficha.classList.contains('on')) cerrar(); });
 
 // ---------- Ir a un sector: al zoom justo para que se lean todos los nombres ----------
-function irA(s) {
+// alLlegar (al abrir una ficha desde un enlace): se va directo, sin vuelo, y después se abre la ficha. Con vuelo, la animación
+// podía deshacer el ajuste que hace la ficha para no tapar el pin.
+function irA(s, alLlegar) {
   const ps = visibles().filter(p => p.z === s);
   if (!ps.length) return;
   // Márgenes: abajo, sitio para la leyenda; a los lados, para los nombres
   const b = L.latLngBounds(ps.map(p => p.c)), arribaIzq = L.point(24, 24), abajoDer = L.point(24, 64);
   const tope = mapa.getBoundsZoom(b, false, arribaIzq.add(abajoDer).add([60, 20]));
-  let z = 14;
+  let z = Math.max(EST.burbujas, Math.min(14, tope));   // sector ancho (p. ej. Pal en el móvil): se aleja lo justo para verlo entero
   while (z < 16.5 && !caben(ps, z)) z += 0.25;
   z = Math.max(z, Math.min(tope, 15));
   const centro = mapa.project(b.getSouthWest(), z).add(mapa.project(b.getNorthEast(), z)).divideBy(2).add(abajoDer.subtract(arribaIzq).divideBy(2));
-  mapa.flyTo(mapa.unproject(centro, z), z, { duration: 0.8 });
+  if (alLlegar) { mapa.setView(mapa.unproject(centro, z), z, { animate: false }); alLlegar(); }
+  else mapa.flyTo(mapa.unproject(centro, z), z, { duration: 0.8 });
   document.querySelectorAll('.sectores button').forEach(x => {
     x.classList.toggle('on', x.dataset.z === s);
     if (x.dataset.z === s) {   // si el botón está escondido en la fila (p. ej. al tocar una burbuja), la fila se desplaza hasta él
@@ -438,7 +459,7 @@ function sinNadaALaVista() {
 function pintarFiltros() {
   const f = document.getElementById('filtros');
   f.innerHTML = modo !== 'comer' ? '' : Object.entries(MENUS).map(([k, m]) =>
-    `<button data-menu="${k}" class="${k === menu ? 'on' : ''}" aria-pressed="${k === menu}"><i style="background:${k === 'todos' ? fondo([MENUS.express.color, MENUS.self.color, MENUS.carta.color]) : m.color}"></i>${m.nombre}<span>${REST.filter(m.vale).length}</span></button>`).join('');
+    `<button data-menu="${k}" class="${k === menu ? 'on' : ''}" aria-pressed="${k === menu}"><i style="background:${k === 'todos' ? fondo(coloresTodos()) : m.color}"></i>${m.nombre}<span>${REST.filter(m.vale).length}</span></button>`).join('');
   f.querySelectorAll('button').forEach(b => b.onclick = () => {
     menu = b.dataset.menu; cerrar(); pintarFiltros(); pintarSectores(); pintar();
     if (sinNadaALaVista()) vistaInicial();
@@ -450,7 +471,7 @@ function pintarSectores() {
   visibles().forEach(p => (cuenta[p.z] = (cuenta[p.z] || 0) + 1));
   const f = document.getElementById('sectores');
   f.innerHTML = SECTORES.filter(z => cuenta[z])
-    .map(z => `<button data-z="${z}">${z}${modo === 'comer' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('');
+    .map(z => `<button data-z="${esc(z)}">${esc(z)}${modo === 'comer' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('');
   f.querySelectorAll('button').forEach(b => b.onclick = () => irA(b.dataset.z));
   pistaFila(f);
 }
@@ -495,8 +516,14 @@ function nivel() {
 }
 
 // ---------- Arranque ----------
-// Zoom mínimo: el que llena la pantalla de relieve (sin bandas vacías)
-function ajustarMin() { mapa.setMinZoom(0); mapa.setMinZoom(mapa.getBoundsZoom(REL, true)); }
+// Zoom mínimo: el que llena la pantalla de relieve (sin bandas vacías). Si el zoom actual queda por debajo, se sube antes y sin
+// animación: si lo hiciera setMinZoom, dejaría un zoom animado pendiente que pisaría la vista de entrada o la ficha de ?abrir.
+function ajustarMin() {
+  mapa.setMinZoom(0);
+  const z = mapa.getBoundsZoom(REL, true);
+  if (mapa.getZoom() < z) mapa.setZoom(z, { animate: false });
+  mapa.setMinZoom(z);
+}
 // Vista de entrada: toda la estación; en Dónde comer, alejando un poco más si alguna burbuja de sector se sale de la pantalla
 function vistaInicial() {
   mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], animate: false });
@@ -512,7 +539,7 @@ function vistaInicial() {
 }
 const q = new URLSearchParams(location.search);
 if (q.get('modo') === 'escuela') modo = 'escuela';
-if (MENUS[q.get('menu')]) menu = q.get('menu');
+if (Object.prototype.hasOwnProperty.call(MENUS, q.get('menu'))) menu = q.get('menu');   // solo filtros que existen (no 'toString' y similares)
 // ?abrir=<id>: va a ese punto y abre su ficha
 const pA = D.puntos.find(p => p.id === q.get('abrir'));
 if (pA) { modo = pA.t === 'escuela' ? 'escuela' : 'comer'; if (modo === 'comer' && !MENUS[menu].vale(pA)) menu = 'todos'; }
@@ -529,7 +556,7 @@ const c = (q.get('c') || '').split(',').map(Number);
 if (c.length >= 2 && c.every(Number.isFinite)) mapa.setView([c[0], c[1]], c[2] || 15, { animate: false });
 else vistaInicial();
 mapa.once('zoomstart movestart', () => document.getElementById('aviso').style.opacity = 0);
-if (pA) { mapa.once('moveend', () => { const g = grupos.find(g => g.ps.includes(pA)); if (g) abrir(g); }); irA(pA.z); }
+if (pA) irA(pA.z, () => { const g = grupos.find(g => g.ps.includes(pA)); if (g) abrir(g); });
 else if (q.get('sector')) irA(q.get('sector'));
 
 // ---------- Dentro de un iframe (p. ej. en grandvalira.com): que el plano no atrape el desplazamiento de la página ----------
