@@ -1,5 +1,5 @@
 // Generado por herramientas/plano/puntos.py a partir de datos.js (Excel). No editar a mano.
-window.PLANO_ESTACION = {"cod": "PA", "nombre": "Pal Arinsal", "sectores": ["Pal", "Arinsal"], "burbujas": 13, "rel": [[42.47209690919285, 1.3623046875], [42.63395872267315, 1.58203125]]};
+window.PLANO_ESTACION = {"cod": "PA", "nombre": "Pal Arinsal", "sectores": ["Pal", "Arinsal", "La Massana"], "burbujas": 13, "rel": [[42.47209690919285, 1.3623046875], [42.63395872267315, 1.58203125]], "alquiler": "Equipo completo: esquís, botas y bastones, o tabla y botas. **No incluye casco.**", "masTiendas": [{"cod": "OA", "nombre": "Ordino Arcalís", "n": 2}]};
 window.PLANO_PUNTOS = [{"id":"E-PA-01","t":"escuela","n":"Escuela Pal Arinsal – Pal","u":"Edifici El Planell (1.900 m)","z":"Pal","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes y sábados","c":[42.536534,1.491052],"w":"https://www.palarinsal.com/es/clases-escuelas/escuela-invierno"},
 {"id":"E-PA-02","t":"escuela","n":"Escuela Pal Arinsal – Arinsal","u":"Edifici Comallemple (1.950 m)","z":"Arinsal","x":false,"s":false,"l":"Escuela de esquí","nota":"Clases 3+ días: lunes y sábados","c":[42.5731,1.4706],"w":"https://www.palarinsal.com/es/clases-escuelas/escuela-invierno"},
 {"id":"R-PA-01","t":"restaurante","n":"Xiringuito de La Caubella","u":"La Caubella (pie de pistas)","z":"Pal","x":true,"s":false,"l":"Xiringuito","nota":"Bocadillo + patatas + bebida","c":[42.5363,1.4913],"w":"https://www.palarinsal.com/es/restaurantes/xiri-caubella"},
@@ -13,4 +13,17 @@ window.PLANO_PUNTOS = [{"id":"E-PA-01","t":"escuela","n":"Escuela Pal Arinsal �
 {"id":"R-PA-11","t":"restaurante","n":"Rústic","u":"La Caubella (pie de pistas)","z":"Pal","x":false,"s":false,"l":"Restaurante","nota":"","c":[42.5363,1.4913],"w":"https://www.palarinsal.com/es/restaurantes/rustic"},
 {"id":"R-PA-12","t":"restaurante","n":"La Terrassa del Vermut","u":"La Caubella (pie de pistas)","z":"Pal","x":false,"s":false,"l":"Terraza","nota":"","c":[42.5363,1.4913],"w":"https://www.palarinsal.com/es/restaurantes/terraza-vermut"},
 {"id":"R-PA-13","t":"restaurante","n":"Cafetería L'Expresso","u":"La Caubella (pie de pistas)","z":"Pal","x":false,"s":false,"l":"Cafetería","nota":"","c":[42.5363,1.4913],"w":"https://www.palarinsal.com/es/restaurantes/pasta-box"},
-{"id":"R-PA-14","t":"restaurante","n":"Cafetería Coll de la Botella","u":"Coll de la Botella (2.069 m)","z":"Pal","x":false,"s":false,"l":"Cafetería","nota":"","c":[42.54476,1.45303],"w":"https://www.palarinsal.com/es/restaurantes/coll-de-la-botella"}];
+{"id":"R-PA-14","t":"restaurante","n":"Cafetería Coll de la Botella","u":"Coll de la Botella (2.069 m)","z":"Pal","x":false,"s":false,"l":"Cafetería","nota":"","c":[42.54476,1.45303],"w":"https://www.palarinsal.com/es/restaurantes/coll-de-la-botella"},
+{"id":"T-MAS-01","t":"tienda","n":"Viladomat La Massana","u":"Centro","z":"La Massana","d":"Av. el Través, 2","pa":true,"nota":"","c":[42.547055,1.514458]},
+{"id":"T-MAS-02","t":"tienda","n":"Esports Pirot La Massana","u":"Centro","z":"La Massana","d":"Av. de Sant Antoni, 17","pa":false,"nota":"","c":[42.545751,1.514663]},
+{"id":"T-MAS-03","t":"tienda","n":"Esports Rossell La Massana","u":"Centro","z":"La Massana","d":"Av. del Ravell, 30","pa":false,"nota":"","c":[42.55065,1.510961]},
+{"id":"T-MAS-04","t":"tienda","n":"Pic Negre 12","u":"Telecabina","z":"La Massana","d":"Av. de Sant Antoni, 6","pa":false,"nota":"","c":[42.546221,1.513882]},
+{"id":"T-MAS-05","t":"tienda","n":"Pic Negre 11","u":"Telecabina","z":"La Massana","d":"Av. de Sant Antoni, 5","pa":false,"nota":"","c":[42.546593,1.514107]},
+{"id":"T-MAS-06","t":"tienda","n":"Pic Negre 19","u":"Anyós (Hotel Anyós Park)","z":"La Massana","d":"Anyós Park, planta baja, local 1","pa":false,"nota":"","c":[42.532948,1.524235]},
+{"id":"T-MAS-07","t":"tienda","n":"Shusski 54","u":"Telecabina","z":"La Massana","d":"Av. del Ravell, 2","pa":false,"nota":"","c":[42.547051,1.513827]},
+{"id":"T-MAS-08","t":"tienda","n":"Shusski 61","u":"Hotel Màgic Ski","z":"La Massana","d":"Hotel Màgic Ski, Av. del Ravell","pa":false,"nota":"","c":[42.547321,1.513512]},
+{"id":"T-PAL-01","t":"tienda","n":"Esports Rossell Pal","u":"Pie de pistas (La Caubella)","z":"Pal","d":"Pie de pistas Pal, Ctra. de la Caubella","pa":false,"nota":"","c":[42.536279,1.491479]},
+{"id":"T-ARI-01","t":"tienda","n":"Pic Negre 2","u":"Pueblo","z":"Arinsal","d":"Carretera General, Ed. Jan","pa":false,"nota":"","c":[42.57249,1.483927]},
+{"id":"T-ARI-02","t":"tienda","n":"Esports Sant Moritz","u":"Pueblo","z":"Arinsal","d":"Carretera d'Arinsal, 16","pa":false,"nota":"","c":[42.57184,1.48418]},
+{"id":"T-ARI-03","t":"tienda","n":"Esports Rossell Arinsal","u":"Pie de pistas (Comallemple)","z":"Arinsal","d":"Edificio central pistas, sector Arinsal","pa":false,"nota":"","c":[42.572962,1.470442]},
+{"id":"T-ARI-04","t":"tienda","n":"Pic Negre 3","u":"Pie de pistas (Comallemple)","z":"Arinsal","d":"Pistas de Arinsal, cota 1.900","pa":false,"nota":"","c":[42.572842,1.470502]}];

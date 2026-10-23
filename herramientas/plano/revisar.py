@@ -1,5 +1,5 @@
 """Revisión automática del plano (necesita Playwright y Microsoft Edge): en cada tamaño de pantalla, la vista de entrada,
-cada sector con cada filtro y vistas al azar. Mide sobre lo que se ve de verdad (cajas del DOM): nombres que se pisan,
+cada sector con cada filtro (y en Escuela y Alquiler) y vistas al azar. Mide sobre lo que se ve de verdad (cajas del DOM): nombres que se pisan,
 nombres escondidos, burbujas cortadas, errores y archivos que fallan.
 Uso: python herramientas/plano/revisar.py [GV PA ...] [pantalla ...] [puerto]   (sin estaciones: todas; sin pantallas: todas)
 Resultados en herramientas/plano/cache/revision/."""
@@ -96,8 +96,9 @@ def main():
                 pg.on("requestfailed", lambda r: fallos.append(f"falló {r.url} {r.failure}"))
                 out = {"estacion": est, "pantalla": nombre, "entrada": {}, "sectores": {}, "azar": [], "filas": {}}
                 menus = None
-                for etiqueta, q in (("express", ""), ("self", "&menu=self"), ("carta", "&menu=carta"), ("todos", "&menu=todos"), ("escuela", "&modo=escuela")):
-                    if menus is not None and etiqueta != "escuela" and etiqueta not in menus:
+                for etiqueta, q in (("express", ""), ("self", "&menu=self"), ("carta", "&menu=carta"), ("todos", "&menu=todos"), ("escuela", "&modo=escuela"),
+                                     ("alquiler", "&modo=alquiler")):
+                    if menus is not None and etiqueta not in ("escuela", "alquiler") and etiqueta not in menus:
                         continue   # filtro que esta estación no tiene (p. ej. Self fuera de GV)
                     t0 = time.time()
                     pg.goto(URL + q, wait_until="networkidle"); esperar(pg)
@@ -106,7 +107,7 @@ def main():
                     a = pg.evaluate(AUDITAR); a["seg"] = round(time.time() - t0, 2)
                     a["alto_plano"] = pg.evaluate("mapa.getSize().y")
                     out["entrada"][etiqueta] = a
-                    if etiqueta in ("express", "escuela"):
+                    if etiqueta in ("express", "escuela", "alquiler"):
                         pg.screenshot(path=os.path.join(SALIDA, f"{est}_{nombre}_entrada_{etiqueta}.png"))
                     out["filas"][etiqueta] = pg.evaluate("""[...document.querySelectorAll('.fila')].filter(f => f.offsetHeight).map(f => ({ id: f.id, cabe: f.scrollWidth <= f.clientWidth + 1,
                         visibles: [...f.querySelectorAll('button')].filter(b => { const r = b.getBoundingClientRect(), c = f.getBoundingClientRect(); return r.right <= c.right + 1; }).length,

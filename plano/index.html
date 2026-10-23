@@ -19,7 +19,7 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
 </script>
 <link rel="stylesheet" href="leaflet/leaflet.css">
 <style>
-  :root { --navy: #0b2b4c; --azul: #0a6ebd; --express: #d0450e; --self: #29843c; --carta: #6c7884; --fondo: #e9edf1; --linea: #dde3ea; }
+  :root { --navy: #0b2b4c; --azul: #0a6ebd; --express: #d0450e; --self: #29843c; --carta: #6c7884; --alquiler: #74358f; --fondo: #e9edf1; --linea: #dde3ea; }
   html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: #14202b; }
   body { display: flex; flex-direction: column; height: 100dvh; }
   header { flex: none; background: var(--navy); color: #fff; padding: 6px 10px 8px; }
@@ -45,6 +45,9 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
   .filtros button.on i { box-shadow: 0 0 0 1.5px #fff; }
   .sectores { background: #f6f8fa; padding: 6px 10px; }
   .sectores button { font-size: 12.5px; padding: 4px 10px; }
+  /* En Alquiler: enlace a las tiendas del mismo sector que están en el plano de otra estación */
+  .sectores a.otra { flex: none; align-self: center; border: 1px dashed var(--alquiler); border-radius: 999px; padding: 4px 10px; font-size: 12.5px;
+                     font-weight: 600; color: var(--alquiler); text-decoration: none; white-space: nowrap; }
   #mapa { flex: 1; position: relative; background: var(--fondo); }
   .leaflet-container { background: var(--fondo); font-family: inherit; }
   .pueblo { background: none; border: 0; box-shadow: none; padding: 0; font-weight: 800; font-size: 13px; color: #1d2a36; letter-spacing: .02em;
@@ -58,6 +61,7 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
   .pin svg { width: 13px; height: 13px; fill: #fff; filter: drop-shadow(0 0 1px rgba(0,0,0,.35)); }
   .pin.e { background: var(--azul); width: 30px; height: 30px; }
   .pin.e svg { width: 15px; height: 15px; }
+  .pin.t { background: var(--alquiler); }
   .pin.sel, .pin.hover { transform: translate(-50%, -50%) scale(1.25); box-shadow: 0 0 0 4px rgba(11,43,76,.25), 0 2px 6px rgba(0,0,0,.4); }
   /* Nombre junto al pin (si no cabe al lado, más lejos con una rayita que lo une) */
   .etq3 { position: absolute; left: 0; top: 0; box-sizing: border-box; background: rgba(255,255,255,.95); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.28);
@@ -95,6 +99,8 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
   .ficha .x { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f6; font-size: 18px; cursor: pointer; }
   .badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; margin: 2px 4px 0 0; color: #fff; vertical-align: 1px; }
   .badge.ex { background: var(--express); } .badge.se { background: var(--self); } .badge.ca { background: #e3e7eb; color: #3d4954; }
+  .badge.pa { background: #fff3bf; color: #6b4f00; }
+  .ficha .cond { font-size: 12.5px; margin-top: 6px; }
   .web { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 7px 12px; border: 1.5px solid var(--navy); border-radius: 999px;
          color: var(--navy); font-size: 13px; font-weight: 700; text-decoration: none; }
   .web:hover { background: var(--navy); color: #fff; }
@@ -123,10 +129,11 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
 </style>
 </head>
 <body>
-<header><small>Tu pack en el mapa · Clases colectivas + Menú</small><nav class="estaciones" id="estaciones" aria-label="Estación"></nav></header>
+<header><small>Tu pack en el mapa · Menú, escuela y alquiler</small><nav class="estaciones" id="estaciones" aria-label="Estación"></nav></header>
 <nav class="tabs" role="tablist">
   <button role="tab" data-modo="comer" aria-selected="true">Dónde comer</button>
   <button role="tab" data-modo="escuela" aria-selected="false">Escuela</button>
+  <button role="tab" data-modo="alquiler" aria-selected="false">Alquiler</button>
 </nav>
 <div class="fila filtros" id="filtros"></div>
 <div class="fila sectores" id="sectores"></div>
@@ -145,6 +152,7 @@ const COL = { novice: '#1e9e4a', easy: '#1a73c7', intermediate: '#d93a3a', advan
 const SECTORES = [...new Set([...EST.sectores, ...D.puntos.map(p => p.z)])];
 const ICO_R = '<svg viewBox="0 0 24 24"><path d="M8.1 13.3 10.9 10.5 3.9 3.5a4 4 0 0 0 0 5.6zm6.8-1.8c1.5.7 3.7.2 5.3-1.4 1.9-1.9 2.3-4.7.8-6.1-1.4-1.4-4.2-1.1-6.1.8-1.6 1.6-2.1 3.8-1.4 5.3L3.7 19.9l1.4 1.4 6.9-6.9 6.9 6.9 1.4-1.4-6.9-6.9z"/></svg>';
 const ICO_E = '<svg viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
+const ICO_T = '<svg viewBox="0 0 24 24"><path d="M7 2h7v8l5 4v4H5v-2h2zM3 20h18v2H3z"/></svg>';   // bota (como en el mapa completo)
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 // Filtros de Dónde comer (el primero es el que se ve al entrar)
@@ -155,6 +163,9 @@ const MENUS = {
   todos:   { nombre: 'Todos',        color: '#0b2b4c', vale: () => true },
 };
 const REST = D.puntos.filter(p => p.t === 'restaurante');
+// Tiendas de alquiler: las que caen en el plano de esta estación (herramientas/plano/puntos.py). Sin ninguna, no hay pestaña.
+const TIENDAS = D.puntos.filter(p => p.t === 'tienda'), COLOR_T = '#74358f';
+if (!TIENDAS.length) document.querySelector('nav.tabs [data-modo="alquiler"]').remove();
 // Filtros sin ningún restaurante en esta estación (p. ej. Self fuera de Grandvalira): no se enseñan
 Object.keys(MENUS).forEach(k => { if (k !== 'todos' && !REST.some(MENUS[k].vale)) delete MENUS[k]; });
 // Qué incluye el Self: la nota más repetida entre los restaurantes que solo tienen Self
@@ -219,13 +230,13 @@ D.pueblos.forEach(p => L.marker(p.c, { icon: L.divIcon({ className: '', html: ''
 
 // ---------- Estado ----------
 let modo = 'comer', menu = Object.keys(MENUS)[0], selId = null;
-const visibles = () => modo === 'escuela' ? D.puntos.filter(p => p.t === 'escuela') : REST.filter(MENUS[menu].vale);
+const visibles = () => modo === 'escuela' ? D.puntos.filter(p => p.t === 'escuela') : modo === 'alquiler' ? TIENDAS : REST.filter(MENUS[menu].vale);
 const capaPuntos = L.layerGroup().addTo(mapa);
 let grupos = [], burbujas = [];
 const conRaton = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 // ---------- Agrupar los que caen en el mismo sitio ----------
-// Dos restaurantes a menos de JUNTOS píxeles (mismo edificio o casi) comparten pin y su nombre va en una lista.
+// Dos restaurantes (o tiendas) a menos de JUNTOS píxeles (mismo edificio o casi) comparten pin y su nombre va en una lista.
 const JUNTOS = 26;
 function agrupar(ps, z) {
   const gs = [];
@@ -240,7 +251,7 @@ function agrupar(ps, z) {
 }
 function htmlEtq(g) {
   if (g.esc) { const p = g.ps[0]; return `<b>${esc(p.z)}</b><small>${esc(p.u.replace(/\s*\(.*\)/, ''))}</small>`; }
-  const puntos = menu === 'todos' && g.ps.length > 1;
+  const puntos = modo === 'comer' && menu === 'todos' && g.ps.length > 1;
   return g.ps.map(p => `<div>${puntos ? `<i style="background:${fondo(colores(p))}"></i>` : ''}${esc(nombre(p))}</div>`).join('');
 }
 // Tamaño de un nombre en pantalla (se mide una vez y se guarda)
@@ -305,19 +316,21 @@ function caben(ps, z) {
 }
 
 // ---------- Pintar puntos (al cambiar de zoom, de pestaña o de filtro) ----------
-// De lejos (zoom por debajo de EST.burbujas, según el tamaño de la estación), una burbuja por sector
-const lejos = () => modo === 'comer' && mapa.getZoom() < EST.burbujas;
+// De lejos (zoom por debajo de EST.burbujas, según el tamaño de la estación), una burbuja por sector (restaurantes y tiendas)
+const lejos = () => modo !== 'escuela' && mapa.getZoom() < EST.burbujas;
 function pintar() {
   capaPuntos.clearLayers();
   mapa.getContainer().classList.toggle('sin-pueblos', mapa.getZoom() < EST.burbujas);   // de lejos, los nombres ya van en las burbujas y las escuelas
   const z = mapa.getZoom(), ps = visibles();
-  // Restaurantes: de lejos, una burbuja por sector; de cerca, uno a uno, salvo los sectores donde aún no caben los nombres
+  // Restaurantes y tiendas: de lejos, una burbuja por sector; de cerca, uno a uno, salvo los sectores donde aún no caben los nombres
+  // (con el zoom al máximo, siempre uno a uno: los nombres que no quepan salen al tocar el pin)
   const porSector = {};
   ps.forEach(p => (porSector[p.z] = porSector[p.z] || []).push(p));
-  const enBurbuja = modo === 'comer' ? Object.keys(porSector).filter(s => lejos() || !caben(porSector[s], z)) : [];
+  const enBurbuja = modo === 'escuela' ? [] : Object.keys(porSector).filter(s => lejos() || (z < mapa.getMaxZoom() && !caben(porSector[s], z)));
+  // En la burbuja, el nombre corto ("Encamp – Solanelles" → "Solanelles"): con nombres largos no caben todas en el móvil
   burbujas = enBurbuja.map(s => {
-    const b = L.latLngBounds(porSector[s].map(p => p.c)), n = porSector[s].length, c = MENUS[menu].color;
-    const m = L.marker(b.getCenter(), { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="burbuja" style="background:${c}">${ICO_R}${esc(s)}<i style="color:${c}">${n}</i></div>` }), zIndexOffset: 500 })
+    const b = L.latLngBounds(porSector[s].map(p => p.c)), n = porSector[s].length, c = modo === 'alquiler' ? COLOR_T : MENUS[menu].color;
+    const m = L.marker(b.getCenter(), { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="burbuja" style="background:${c}">${modo === 'alquiler' ? ICO_T : ICO_R}${esc(s.split(' – ').pop())}<i style="color:${c}">${n}</i></div>` }), zIndexOffset: 500 })
       .on('click', () => irA(s)).addTo(capaPuntos);
     return m;
   });
@@ -325,8 +338,9 @@ function pintar() {
   grupos = agrupar(ps.filter(p => !enBurbuja.includes(p.z)), z);
   grupos.forEach(g => {
     g.ll = mapa.unproject(g.pt, z);
-    const cs = [...new Set(g.ps.flatMap(colores))];
-    g.pin = L.marker(g.ll, { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="pin ${g.esc ? 'e' : 'r'}" style="background:${g.esc ? '' : fondo(cs)}">${g.esc ? ICO_E : ICO_R}</div>` }),
+    const t = g.ps[0].t, cs = t === 'restaurante' ? [...new Set(g.ps.flatMap(colores))] : [];
+    const html = { escuela: `<div class="pin e">${ICO_E}</div>`, tienda: `<div class="pin t">${ICO_T}</div>`, restaurante: `<div class="pin r" style="background:${fondo(cs)}">${ICO_R}</div>` }[t];
+    g.pin = L.marker(g.ll, { icon: L.divIcon({ className: '', iconSize: [0, 0], html }),
       zIndexOffset: g.esc ? 1000 : 0, keyboard: true, title: conRaton ? '' : g.ps.map(nombre).join(', '), alt: g.ps.map(nombre).join(', ') }).addTo(capaPuntos);
     g.etq = L.marker(g.ll, { pane: 'etiquetas', icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="etq3">${g.html}</div>` }), keyboard: false }).addTo(capaPuntos);
     g.raya = null;
@@ -346,15 +360,23 @@ function pintar() {
 
 // Burbujas que se pisan: se separan lo justo (por el lado en que menos se pisan)
 function apartar(ms) {
+  const tam = mapa.getSize();
   const cs = ms.map(m => { const el = m.getElement().firstChild, p = mapa.latLngToContainerPoint(m.getLatLng()); return { m, x: p.x, y: p.y, w: el.offsetWidth + 6, h: el.offsetHeight + 6 }; });
+  // La burbuja que asoma por el borde (su sector está en pantalla o justo al lado) se mete hacia dentro en vez de quedar cortada
+  // (así no hace falta alejar el plano para verlas todas); las de sectores fuera de la pantalla se quedan donde están
+  cs.forEach(c => c.meter = c.x > -c.w / 2 && c.x < tam.x + c.w / 2 && c.y > -c.h / 2 && c.y < tam.y + c.h / 2);
+  const meter = c => { if (c.meter) { c.x = Math.min(Math.max(c.x, c.w / 2 + 2), tam.x - c.w / 2 - 2); c.y = Math.min(Math.max(c.y, c.h / 2 + 2), tam.y - c.h / 2 - 2); } };
+  cs.forEach(meter);
   for (let vuelta = 0; vuelta < 30; vuelta++) {
     let movido = false;
     cs.forEach((a, i) => cs.slice(i + 1).forEach(b => {
       const ox = (a.w + b.w) / 2 - Math.abs(a.x - b.x), oy = (a.h + b.h) / 2 - Math.abs(a.y - b.y);
       if (ox <= 0 || oy <= 0) return;
       movido = true;
-      if (ox < oy) { const d = (ox / 2 + 0.5) * (a.x < b.x ? -1 : 1); a.x += d; b.x -= d; }
+      // por el lado en que menos se pisan; si tras 15 vueltas no se han separado (contra el borde), una encima de otra
+      if (ox < oy && vuelta < 15) { const d = (ox / 2 + 0.5) * (a.x < b.x ? -1 : 1); a.x += d; b.x -= d; }
       else { const d = (oy / 2 + 0.5) * (a.y < b.y ? -1 : 1); a.y += d; b.y -= d; }
+      meter(a); meter(b);
     }));
     if (!movido) break;
   }
@@ -415,6 +437,12 @@ L.DomEvent.disableScrollPropagation(ficha);
 const web = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return 'la web'; } };
 const enlace = p => /^https?:\/\//.test(p.w || '') ? `<a class="web" href="${esc(p.w)}" target="_blank" rel="noopener">Más info en ${esc(web(p.w))} ↗</a>` : '';
 const badges = p => (p.x ? '<span class="badge ex">Menú Express</span>' : '') + (p.s ? '<span class="badge se">Menú Self</span>' : '') + (!p.x && !p.s ? '<span class="badge ca">A la carta</span>' : '');
+// Tiendas: cómo llegar (Google Maps, como en el mapa completo), partner y qué incluye el alquiler (Excel, hoja Textos; **así** = negrita)
+const llegar = p => `<a class="web" href="https://www.google.com/maps/dir/?api=1&amp;destination=${+p.c[0]},${+p.c[1]}" target="_blank" rel="noopener">Cómo llegar ↗</a>`;
+// Ubicación y dirección, sin repetir ("Av. d'Encamp · Av. d'Encamp, 13" → "Av. d'Encamp, 13")
+const donde = p => p.u && p.d && p.d.toLowerCase().includes(p.u.toLowerCase()) ? p.d : [p.u, p.d].filter(Boolean).join(' · ');
+const partner = p => p.pa ? '<span class="badge pa">★ Partner Grandvalira Resorts</span>' : '';
+const condAlquiler = () => EST.alquiler ? `<p class="cond">${esc(EST.alquiler).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>` : '';
 const incluye = p => menu === 'self' ? NOTA_SELF : menu === 'carta' ? p.l : p.x ? p.nota : p.s ? NOTA_SELF : p.l;
 function abrir(g) {
   selId = g.ps[0].id;
@@ -422,6 +450,10 @@ function abrir(g) {
   const p = g.ps[0];
   let h;
   if (g.esc) h = `<h3>${esc(p.n)}</h3><p>${esc(p.u)}</p><p>${esc(p.nota || '')}</p>${enlace(p)}`;
+  else if (p.t === 'tienda' && g.ps.length === 1)
+    h = `<h3>${esc(p.n)}</h3><p>${esc(donde(p))}</p>${p.pa ? `<p>${partner(p)}</p>` : ''}${p.nota ? `<p>${esc(p.nota)}</p>` : ''}${condAlquiler()}${llegar(p)}`;
+  else if (p.t === 'tienda')
+    h = `<h3>${g.ps.length} tiendas aquí</h3><p>${esc(p.z)}</p>${condAlquiler()}<ul>${g.ps.map(q => `<li><strong>${esc(q.n)}</strong>${partner(q)}<small>${esc([donde(q), q.nota].filter(Boolean).join(' · '))}</small>${llegar(q)}</li>`).join('')}</ul>`;
   else if (g.ps.length === 1) h = `<h3>${esc(nombre(p))}</h3><p>${esc(p.u)}</p><p>${badges(p)}</p><p>${esc(incluye(p) || '')}</p>${enlace(p)}`;
   else h = `<h3>${g.ps.length} restaurantes aquí</h3><p>${esc(p.z)}</p><ul>${g.ps.map(q => `<li><strong>${esc(nombre(q))}</strong>${badges(q)}<small>${esc([q.u, incluye(q)].filter(Boolean).join(' · '))}</small>${enlace(q)}</li>`).join('')}</ul>`;
   ficha.lastElementChild.innerHTML = h;
@@ -453,7 +485,7 @@ function irA(s, alLlegar) {
   const tope = mapa.getBoundsZoom(b, false, arribaIzq.add(abajoDer).add([60, 20]));
   let z = Math.max(EST.burbujas, Math.min(14, tope));   // sector ancho (p. ej. Pal en el móvil): se aleja lo justo para verlo entero
   while (z < 16.5 && !caben(ps, z)) z += 0.25;
-  z = Math.max(z, Math.min(tope, 15));
+  z = Math.max(z, Math.min(tope, modo === 'alquiler' ? 16 : 15));   // tiendas: en los pueblos, muy juntas; se acerca más para separarlas
   const centro = mapa.project(b.getSouthWest(), z).add(mapa.project(b.getNorthEast(), z)).divideBy(2).add(abajoDer.subtract(arribaIzq).divideBy(2));
   if (alLlegar) { mapa.setView(mapa.unproject(centro, z), z, { animate: false }); alLlegar(); }
   else mapa.flyTo(mapa.unproject(centro, z), z, { duration: 0.8 });
@@ -489,7 +521,10 @@ function pintarSectores() {
   visibles().forEach(p => (cuenta[p.z] = (cuenta[p.z] || 0) + 1));
   const f = document.getElementById('sectores');
   f.innerHTML = SECTORES.filter(z => cuenta[z])
-    .map(z => `<button data-z="${esc(z)}">${esc(z)}${modo === 'comer' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('');
+    .map(z => `<button data-z="${esc(z)}">${esc(z)}${modo !== 'escuela' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('')
+    // En Alquiler, al final: las tiendas del mismo sector que salen en el plano de otra estación (salvo con ?solo=1)
+    + (modo === 'alquiler' && q.get('solo') !== '1' ? (EST.masTiendas || []).filter(m => Object.prototype.hasOwnProperty.call(ESTACIONES, m.cod))
+      .map(m => `<a class="otra" href="?e=${m.cod}&amp;modo=alquiler">${+m.n} más en ${esc(m.nombre)} →</a>`).join('') : '');
   f.querySelectorAll('button').forEach(b => b.onclick = () => irA(b.dataset.z));
   pistaFila(f);
 }
@@ -524,7 +559,7 @@ function pintarEstaciones() {
     const cod = new URLSearchParams(a.getAttribute('href').slice(1)).get('e');
     if (cod === EST.cod) { cerrar(); vistaInicial(); return; }
     const p = new URLSearchParams({ e: cod });
-    if (modo === 'escuela') p.set('modo', 'escuela'); else if (menu !== Object.keys(MENUS)[0]) p.set('menu', menu);
+    if (modo !== 'comer') p.set('modo', modo); else if (menu !== Object.keys(MENUS)[0]) p.set('menu', menu);
     location.href = '?' + p;
   });
 }
@@ -564,19 +599,20 @@ function vistaInicial() {
   for (let i = 0; i < 12 && burbujas.length; i++) {
     const tam = mapa.getSize(), rs = burbujas.map(b => rect(b.getElement().firstChild));
     const l = Math.min(...rs.map(r => r.l)), r = Math.max(...rs.map(r => r.r)), t = Math.min(...rs.map(r => r.t)), b = Math.max(...rs.map(r => r.b));
-    if (l >= 0 && r <= tam.x && t >= 0 && b <= tam.y) break;
-    const grande = r - l > tam.x || b - t > tam.y;
+    const pisan = rs.some((a, i) => rs.slice(i + 1).some(o => choca(a, o)));   // no han cabido separadas
+    if (l >= 0 && r <= tam.x && t >= 0 && b <= tam.y && !pisan) break;
+    const grande = pisan || r - l > tam.x || b - t > tam.y;
     // Pantalla muy apaisada (móvil en horizontal): para que quepan todas las burbujas se deja ver algo de borde a los lados
     if (grande && mapa.getZoom() - 0.25 < mapa.getMinZoom()) mapa.setMinZoom(mapa.getZoom() - 0.25);
     mapa.setView(mapa.containerPointToLatLng([(l + r) / 2, (t + b) / 2]), grande ? mapa.getZoom() - 0.25 : mapa.getZoom(), { animate: false });
   }
 }
 const q = new URLSearchParams(location.search);
-if (q.get('modo') === 'escuela') modo = 'escuela';
+if ([...document.querySelectorAll('nav.tabs button')].some(b => b.dataset.modo === q.get('modo'))) modo = q.get('modo');   // ?modo=escuela | alquiler
 if (Object.prototype.hasOwnProperty.call(MENUS, q.get('menu'))) menu = q.get('menu');   // solo filtros que existen (no 'toString' y similares)
-// ?abrir=<id>: va a ese punto y abre su ficha
+// ?abrir=<id>: va a ese punto y abre su ficha (las tiendas no llevan la estación en el código: ?e=PA&abrir=T-MAS-01)
 const pA = D.puntos.find(p => p.id === q.get('abrir'));
-if (pA) { modo = pA.t === 'escuela' ? 'escuela' : 'comer'; if (modo === 'comer' && !MENUS[menu].vale(pA)) menu = 'todos'; }
+if (pA) { modo = { escuela: 'escuela', tienda: 'alquiler' }[pA.t] || 'comer'; if (modo === 'comer' && !MENUS[menu].vale(pA)) menu = 'todos'; }
 // Primera vista: ya la de entrada (o la de ?c=), para que el relieve que se va a ver empiece a bajar cuanto antes.
 // Antes se pintan las filas de botones, que cambian el alto del plano.
 pintarFiltros(); pintarSectores();

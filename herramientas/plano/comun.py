@@ -20,14 +20,15 @@ ESTACIONES = {
         # Teselas z14 que cubre el relieve (x desde, y desde, x hasta, y hasta): de Encamp a Pas de la Casa, con margen para que
         # en el móvil se pueda alejar hasta ver toda la estación sin bandas vacías
         zona=(8262, 6041, 8273, 6054),
-        # Solo se dibujan las pistas y remontes cuyo centro cae aquí (sur, oeste, norte, este)
+        # Solo se dibujan las pistas y remontes cuyo centro cae aquí (sur, oeste, norte, este), y las tiendas de alquiler que caen aquí
         caja=(42.515, 1.570, 42.605, 1.765),
         # Pueblos que salen en el plano: nombre en OpenStreetMap → cómo se escribe en el plano
         pueblos={"Encamp": "Encamp", "Canillo": "Canillo", "el Tarter": "El Tarter", "Soldeu": "Soldeu", "Grau Roig": "Grau Roig",
                  "Pas de la Casa": "Pas de la Casa"},
-        # Botones de sector, en este orden (como en la columna Zona del Excel)
-        sectores=["Encamp", "Canillo", "El Tarter", "Soldeu", "Grau Roig", "Peretol", "Pas de la Casa"],
-        # Por debajo de este zoom, en Dónde comer los restaurantes van en una burbuja por sector (estación grande: más alto)
+        # Botones de sector, en este orden (como en la columna Zona del Excel; Encamp – Solanelles y Bordes d'Envalira
+        # solo tienen tiendas de alquiler)
+        sectores=["Encamp", "Encamp – Solanelles", "Canillo", "El Tarter", "Soldeu", "Bordes d'Envalira", "Grau Roig", "Peretol", "Pas de la Casa"],
+        # Por debajo de este zoom, en Dónde comer y Alquiler los puntos van en una burbuja por sector (estación grande: más alto)
         burbujas=13.75,
         escuelas="https://www.grandvalira.com/es/escuelas",
     ),
@@ -36,7 +37,7 @@ ESTACIONES = {
         zona=(8254, 6043, 8263, 6052),
         caja=(42.515, 1.420, 42.595, 1.540),
         pueblos={"Arinsal": "Arinsal", "Pal": "Pal", "La Massana": "La Massana"},
-        sectores=["Pal", "Arinsal"],
+        sectores=["Pal", "Arinsal", "La Massana"],   # La Massana: solo tiendas de alquiler
         burbujas=13,
         escuelas="https://www.palarinsal.com/es/clases-escuelas/escuela-invierno",
     ),

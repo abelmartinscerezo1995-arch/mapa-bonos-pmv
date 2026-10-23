@@ -52,23 +52,24 @@ Después: **doble clic en `Actualizar mapa.bat`**. Revisa el Excel, explica cual
 
 ## Plano propio (prueba): Grandvalira, Pal Arinsal y Ordino Arcalís
 
-En `plano/` hay un plano propio por estación: relieve de invierno, pistas y remontes, y **solo** restaurantes y escuelas. Está en pruebas y aún no sustituye al mapa de los bonos.
+En `plano/` hay un plano propio por estación: relieve de invierno, pistas y remontes, y **solo** restaurantes, escuelas y tiendas de alquiler. Está en pruebas y aún no sustituye al mapa de los bonos.
 
 - Un solo enlace, `plano/`, con un botón por estación arriba (*Grandvalira · Pal Arinsal · Ordino Arcalís*). Al cambiar de estación se conservan la pestaña y el filtro.
 - Enlace directo a una estación: `plano/?e=PA`. Para el enlace de un bono, `plano/?e=PA&solo=1` deja solo esa estación arriba.
-- **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos* (los que no tienen ningún restaurante en esa estación no salen, p. ej. Self en PA), y **Escuela**. Botones de sector.
-- De lejos, una burbuja por sector; al acercar, cada restaurante con su nombre (sin tocar nada). Los del mismo edificio comparten pin.
+- **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos* (los que no tienen ningún restaurante en esa estación no salen, p. ej. Self en PA), **Escuela** y **Alquiler**. Botones de sector.
+- **Alquiler**: cada estación enseña las tiendas que caen en su plano (las del Excel valen para todas: "Todas"). Ficha con dirección, *Partner*, qué incluye el alquiler (hoja *Textos*, `alquiler.p2`) y botón **Cómo llegar** (Google Maps). En Pal Arinsal y Ordino Arcalís, un enlace lleva a las tiendas Nord Pass del otro plano. El plano no tiene calles: para llegar a la tienda, *Cómo llegar*.
+- De lejos, una burbuja por sector; al acercar, cada restaurante o tienda con su nombre (sin tocar nada). Los del mismo edificio comparten pin.
 - Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com, ordinoarcalis.com).
 - Dentro de un iframe no atrapa el desplazamiento de la página: Ctrl + rueda (ordenador) o dos dedos (móvil) para mover el plano.
-- Parámetros: `e` (`GV`, `PA`, `OA`), `solo=1`, `menu` (`express`, `self`, `carta`, `todos`), `modo=escuela`, `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código), `c=lat,lon,zoom`.
+- Parámetros: `e` (`GV`, `PA`, `OA`), `solo=1`, `menu` (`express`, `self`, `carta`, `todos`), `modo` (`escuela`, `alquiler`), `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código, salvo en las tiendas: `?e=PA&abrir=T-MAS-01`), `c=lat,lon,zoom`.
 
-Cada estación tiene su carpeta (`plano/GV/`, `plano/PA/`, `plano/OA/`) con el relieve, las líneas y los puntos. Sus datos (zona del relieve, pueblos, orden de los sectores, página de la escuela) están en `herramientas/plano/comun.py`.
+Cada estación tiene su carpeta (`plano/GV/`, `plano/PA/`, `plano/OA/`) con el relieve, las líneas y los puntos. Sus datos (zona del relieve, pueblos, orden de los sectores, página de la escuela, y la caja que decide qué tiendas salen en cada plano) están en `herramientas/plano/comun.py`.
 
 Cómo se mantiene:
 
 | Cuándo | Qué hacer |
 |---|---|
-| Cambia el Excel | Nada más: `Actualizar mapa.bat` también regenera los puntos del plano de cada estación (los puntos sin coordenadas no salen). |
+| Cambia el Excel | Nada más: `Actualizar mapa.bat` también regenera los puntos del plano de cada estación (los puntos sin coordenadas no salen; los avisa, y también si los puntos de una zona están tan separados que no se pueden enseñar juntos). |
 | Cada temporada (pistas nuevas) | `python herramientas/plano/descargar.py` y después `python herramientas/plano/lineas.py`. Revisa el plano contra el oficial: las pistas salen de OpenStreetMap. |
 | Cambiar la zona o el estilo del relieve | `python herramientas/plano/relieve.py` (alrededor de un minuto por estación; necesita numpy, scipy y Pillow). |
 | Comprobar que todo se lee bien | `python herramientas/plano/revisar.py` (necesita Playwright y Edge): prueba 9 tamaños de pantalla y avisa si algún nombre se pisa o se esconde. |
