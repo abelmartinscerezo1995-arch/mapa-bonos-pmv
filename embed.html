@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa del pack</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<link rel="preload" href="vendor/leaflet/leaflet.js" as="script">
+<link rel="preload" href="datos.js" as="script">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<style>
+  html, body { height: 100%; margin: 0; background: transparent; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #16202b; overflow: hidden; }
+</style>
+</head>
+<body>
+<!-- Versión para meter dentro de otra web con un <iframe> (la web anfitriona elige el alto):
+     <iframe src="https://SERVIDOR/embed.html?e=GV&s=a&l=es" style="width:100%;height:560px;border:0"
+             loading="lazy" allow="geolocation" title="Mapa de tiendas de alquiler"></iframe> -->
+<div data-mapa-bonos data-modo="iframe"></div>
+<script src="vendor/leaflet/leaflet.js" defer></script>
+<script src="datos.js" defer></script>
+<script src="mapa-bonos.js" defer></script>
+</body>
+</html>
