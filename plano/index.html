@@ -183,17 +183,22 @@ const REL = L.latLngBounds(EST.rel);
 
 // Zoom máximo 16.5: más cerca el relieve ya se ve borroso (las teselas llegan a z15). La capa de relieve se queda en 17
 // porque Leaflet redondea el zoom (16.5 → 17) para elegir teselas, y si pasa del máximo de la capa no pinta ninguna.
-const mapa = L.map('mapa', { zoomSnap: 0.25, zoomDelta: 0.5, maxZoom: 16.5, maxBounds: REL, maxBoundsViscosity: 1, zoomControl: false, preferCanvas: true });
+// Sin fundido al aparecer las teselas: el fundido redibuja la pantalla en cada fotograma (un 18 % menos de trabajo al acercar y mover).
+const mapa = L.map('mapa', { zoomSnap: 0.25, zoomDelta: 0.5, maxZoom: 16.5, maxBounds: REL, maxBoundsViscosity: 1, zoomControl: false, preferCanvas: true, fadeAnimation: false });
 L.control.zoom({ position: 'topright' }).addTo(mapa);
 mapa.attributionControl.setPrefix(false).addAttribution('© OpenStreetMap · relieve: AWS Terrain Tiles');
 // bounds un pelín más pequeño que el relieve: si no, Leaflet pide también las teselas que solo tocan el borde (y no existen)
 L.tileLayer(EST.cod + '/relieve/{z}/{x}/{y}.webp', { minNativeZoom: 11, maxNativeZoom: 15, maxZoom: 17, bounds: REL.pad(-0.0005), keepBuffer: 4 }).addTo(mapa);
-// Cada tipo de línea en su propia capa del mapa (pane), para que el orden de dibujo no cambie al mostrar u ocultar
+// Las líneas se dibujan en 4 lienzos (menos memoria y menos trabajo que uno por tipo). Dentro de un lienzo, lo último que se añade
+// queda encima: por eso los bordes blancos de las pistas van en su propio lienzo (se quitan y se ponen según el zoom y quedarían
+// encima de las pistas) y nivel() añade siempre el borde de los remontes antes que el remonte, y las estaciones las últimas.
 const ren = {};
-['carretera', 'zona', 'borde', 'pista', 'remonteBorde', 'remonte', 'estacion'].forEach((n, i) => {
+['fondo', 'borde', 'pista', 'remontes'].forEach((n, i) => {
   mapa.createPane(n).style.zIndex = 401 + i;
   ren[n] = L.canvas({ pane: n, padding: 0.4 });
 });
+ren.carretera = ren.zona = ren.fondo;                               // carreteras siempre; zonas encima, de cerca
+ren.remonteBorde = ren.remonte = ren.estacion = ren.remontes;
 // Rayitas que unen un nombre con su pin (debajo de los pines) y nombres (encima)
 const paneGuias = mapa.createPane('guias'); paneGuias.style.zIndex = 590; paneGuias.classList.add('guias');
 const paneEtq = mapa.createPane('etiquetas'); paneEtq.style.zIndex = 640; paneEtq.classList.add('etiquetas');
@@ -566,16 +571,20 @@ function pintarEstaciones() {
 
 // ---------- Qué líneas se ven según lo cerca que estés ----------
 const pon = (capa, si) => si ? (mapa.hasLayer(capa) || capa.addTo(mapa)) : mapa.removeLayer(capa);
+let grosor = null;   // el de la última vez: si no cambia, no se toca ninguna línea
 function nivel() {
   const z = mapa.getZoom();
   const vista = z < 13.75, cerca = z >= 14.75;
   const w = vista ? 1.4 : cerca ? 3 + (z - 14.75) * 1.6 : 2.2;
-  capas.pista.eachLayer(l => l.setStyle({ weight: w, opacity: vista ? 0.6 : 1 }));
-  capas.corta.eachLayer(l => l.setStyle({ weight: w }));
-  capas.borde.eachLayer(l => l.setStyle({ weight: w + 2 }));
-  capas.bordeCorta.eachLayer(l => l.setStyle({ weight: w + 2 }));
+  if (w !== grosor) {
+    grosor = w;
+    capas.pista.eachLayer(l => l.setStyle({ weight: w, opacity: vista ? 0.6 : 1 }));
+    capas.corta.eachLayer(l => l.setStyle({ weight: w }));
+    capas.borde.eachLayer(l => l.setStyle({ weight: w + 2 }));
+    capas.bordeCorta.eachLayer(l => l.setStyle({ weight: w + 2 }));
+  }
   pon(capas.borde, !vista); pon(capas.corta, cerca); pon(capas.bordeCorta, cerca); pon(capas.zona, cerca);
-  pon(capas.remonte, !vista); pon(capas.remonteBorde, !vista); pon(capas.estacion, z >= 15.25);
+  pon(capas.remonteBorde, !vista); pon(capas.remonte, !vista); pon(capas.estacion, z >= 15.25);   // en este orden (mismo lienzo)
   telecabinas.forEach(({ l, n }) => {
     if (z >= 14 && !l.getTooltip()) l.bindTooltip(n, { permanent: true, direction: 'center', className: 'remonte' });
     if (z < 14 && l.getTooltip()) l.unbindTooltip();
