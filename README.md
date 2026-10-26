@@ -57,9 +57,10 @@ En `plano/` hay un plano propio por estación: relieve de invierno, pistas y rem
 - Un solo enlace, `plano/`, con un botón por estación arriba (*Grandvalira · Pal Arinsal · Ordino Arcalís*). Al cambiar de estación se conservan la pestaña y el filtro.
 - Enlace directo a una estación: `plano/?e=PA`. Para el enlace de un bono, `plano/?e=PA&solo=1` deja solo esa estación arriba.
 - **Dónde comer** (por defecto) con filtros *Express / Self / A la carta / Todos* (los que no tienen ningún restaurante en esa estación no salen, p. ej. Self en PA), **Escuela** y **Alquiler**. Botones de sector.
+- Al cambiar de pestaña o de filtro, el plano va a lo nuevo del sector elegido (p. ej. de los restaurantes de Soldeu a sus tiendas); sin sector, a la vista de entrada. Si has movido el plano tú, se queda donde está mientras se vea algo.
 - **Alquiler**: cada estación enseña las tiendas que caen en su plano (las del Excel valen para todas: "Todas"). Ficha con dirección, *Partner*, qué incluye el alquiler (hoja *Textos*, `alquiler.p2`) y botón **Cómo llegar** (Google Maps). En Pal Arinsal y Ordino Arcalís, un enlace lleva a las tiendas Nord Pass del otro plano. El plano no tiene calles: para llegar a la tienda, *Cómo llegar*.
 - De lejos, una burbuja por sector; al acercar, cada restaurante o tienda con su nombre (sin tocar nada). Los del mismo edificio comparten pin.
-- Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com, ordinoarcalis.com).
+- Ficha con los menús que acepta y enlace a su página oficial (grandvalira.com, palarinsal.com, ordinoarcalis.com). En el móvil sale abajo; en pantallas anchas (ordenador, tableta), a la izquierda.
 - Dentro de un iframe no atrapa el desplazamiento de la página: Ctrl + rueda (ordenador) o dos dedos (móvil) para mover el plano.
 - Parámetros: `e` (`GV`, `PA`, `OA`), `solo=1`, `menu` (`express`, `self`, `carta`, `todos`), `modo` (`escuela`, `alquiler`), `sector=Grau Roig`, `abrir=R-GV-13` (abre esa ficha; la estación sale del código, salvo en las tiendas: `?e=PA&abrir=T-MAS-01`), `c=lat,lon,zoom`.
 

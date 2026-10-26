@@ -95,6 +95,8 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
   .ficha li { padding: 7px 0; border-top: 1px solid #eef1f4; }
   .ficha li strong { font-size: 14.5px; margin-right: 4px; }
   .ficha li small { display: block; color: #5b6773; font-size: 12.5px; margin-top: 2px; }
+  .ficha li .badges { margin-top: 1px; }
+  .ficha li .badges:empty { display: none; }
   .ficha li.sel strong { color: var(--navy); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
   .ficha .x { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f6; font-size: 18px; cursor: pointer; }
   .badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; margin: 2px 4px 0 0; color: #fff; vertical-align: 1px; }
@@ -125,6 +127,25 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
     .estaciones a { padding: 3px 8px; }
     nav.tabs button { padding: 6px 0 5px; }
     .ficha { max-height: 62%; }
+  }
+  /* Pantalla ancha (ordenador, tableta, iframe ancho): cabecera en una línea, botones a su medida y alineados a la izquierda
+     (estirados a todo el ancho parecían de móvil) y la ficha a un lado, arriba a la izquierda. El mismo ancho en FICHA_AL_LADO. */
+  @media (min-width: 760px) {
+    header { display: flex; align-items: center; gap: 16px; padding: 8px 12px; }
+    header small { order: 2; margin: 0 4px 0 auto; font-size: 12px; }
+    .estaciones a { flex: none; padding: 6px 18px; }
+    nav.tabs { padding: 0 6px; }
+    nav.tabs button { flex: none; padding: 11px 20px 9px; }
+    .filtros { padding: 7px 10px; }
+    .filtros button { flex: none; padding: 5px 12px; }
+    .ficha { top: 10px; bottom: auto; right: auto; width: 370px; max-height: calc(100% - 64px); }
+  }
+  /* Ancha y baja (móvil en horizontal): tan compacta como en la pantalla baja de arriba, para dejar sitio al plano */
+  @media (min-width: 760px) and (max-height: 500px) {
+    header { padding: 5px 12px; }
+    .estaciones a { padding: 3px 16px; }
+    nav.tabs button { padding: 6px 20px 5px; }
+    .ficha { max-height: calc(100% - 20px); }
   }
 </style>
 </head>
@@ -235,6 +256,9 @@ D.pueblos.forEach(p => L.marker(p.c, { icon: L.divIcon({ className: '', html: ''
 
 // ---------- Estado ----------
 let modo = 'comer', menu = Object.keys(MENUS)[0], selId = null;
+// sector: el elegido (botón o burbuja) hasta que se arrastra el plano. tocado: el usuario ha movido o acercado el plano desde el
+// último encuadre automático (el de entrada o el de un sector). Deciden adónde va el plano al cambiar de pestaña o de filtro.
+let sector = null, tocado = false;
 const visibles = () => modo === 'escuela' ? D.puntos.filter(p => p.t === 'escuela') : modo === 'alquiler' ? TIENDAS : REST.filter(MENUS[menu].vale);
 const capaPuntos = L.layerGroup().addTo(mapa);
 let grupos = [], burbujas = [];
@@ -435,7 +459,7 @@ function resaltar(g, si) {
 }
 
 // ---------- Ficha ----------
-const ficha = document.getElementById('ficha');
+const ficha = document.getElementById('ficha'), FICHA_AL_LADO = matchMedia('(min-width: 760px)');   // como en el CSS (pantalla ancha)
 // La ficha está dentro del mapa: que tocarla, arrastrar o hacer scroll en ella no mueva ni cierre el plano
 L.DomEvent.disableClickPropagation(ficha);
 L.DomEvent.disableScrollPropagation(ficha);
@@ -458,14 +482,23 @@ function abrir(g) {
   else if (p.t === 'tienda' && g.ps.length === 1)
     h = `<h3>${esc(p.n)}</h3><p>${esc(donde(p))}</p>${p.pa ? `<p>${partner(p)}</p>` : ''}${p.nota ? `<p>${esc(p.nota)}</p>` : ''}${condAlquiler()}${llegar(p)}`;
   else if (p.t === 'tienda')
-    h = `<h3>${g.ps.length} tiendas aquí</h3><p>${esc(p.z)}</p>${condAlquiler()}<ul>${g.ps.map(q => `<li><strong>${esc(q.n)}</strong>${partner(q)}<small>${esc([donde(q), q.nota].filter(Boolean).join(' · '))}</small>${llegar(q)}</li>`).join('')}</ul>`;
+    h = `<h3>${g.ps.length} tiendas aquí</h3><p>${esc(p.z)}</p>${condAlquiler()}<ul>${g.ps.map(q => `<li><strong>${esc(q.n)}</strong><div class="badges">${partner(q)}</div><small>${esc([donde(q), q.nota].filter(Boolean).join(' · '))}</small>${llegar(q)}</li>`).join('')}</ul>`;
   else if (g.ps.length === 1) h = `<h3>${esc(nombre(p))}</h3><p>${esc(p.u)}</p><p>${badges(p)}</p><p>${esc(incluye(p) || '')}</p>${enlace(p)}`;
-  else h = `<h3>${g.ps.length} restaurantes aquí</h3><p>${esc(p.z)}</p><ul>${g.ps.map(q => `<li><strong>${esc(nombre(q))}</strong>${badges(q)}<small>${esc([q.u, incluye(q)].filter(Boolean).join(' · '))}</small>${enlace(q)}</li>`).join('')}</ul>`;
+  else h = `<h3>${g.ps.length} restaurantes aquí</h3><p>${esc(p.z)}</p><ul>${g.ps.map(q => `<li><strong>${esc(nombre(q))}</strong><div class="badges">${badges(q)}</div><small>${esc([q.u, incluye(q)].filter(Boolean).join(' · '))}</small>${enlace(q)}</li>`).join('')}</ul>`;
   ficha.lastElementChild.innerHTML = h;
   ficha.classList.add('on'); ficha.scrollTop = 0;
-  // Si la ficha tapa el pin o su nombre, se sube el plano
-  const y = mapa.latLngToContainerPoint(g.ll).y, tope = (mapa.getSize().y - ficha.offsetHeight - 12) * 0.55;
-  if (y > tope) mapa.panBy([0, y - tope]);
+  // Si la ficha tapa el pin o su nombre, se mueve el plano: con la ficha abajo (móvil), hacia arriba; con la ficha al lado
+  // (pantalla ancha), el pin pasa a la parte libre de la derecha
+  const tam = mapa.getSize(), pt = mapa.latLngToContainerPoint(g.ll);
+  if (FICHA_AL_LADO.matches) {
+    const f = { l: 0, t: 0, r: ficha.offsetLeft + ficha.offsetWidth + 16, b: ficha.offsetTop + ficha.offsetHeight + 16 };
+    const k = { l: pt.x - g.r, t: pt.y - g.r, r: pt.x + g.r, b: pt.y + g.r };
+    if (g.caja) Object.assign(k, { l: Math.min(k.l, g.caja.l), t: Math.min(k.t, g.caja.t), r: Math.max(k.r, g.caja.r), b: Math.max(k.b, g.caja.b) });
+    if (choca(f, k)) mapa.panBy([pt.x - (f.r + (tam.x - f.r) * 0.4), 0]);
+  } else {
+    const tope = (tam.y - ficha.offsetHeight - 12) * 0.55;
+    if (pt.y > tope) mapa.panBy([0, pt.y - tope]);
+  }
 }
 function marcarSel() {
   grupos.forEach(g => {
@@ -485,6 +518,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && ficha.clas
 function irA(s, alLlegar) {
   const ps = visibles().filter(p => p.z === s);
   if (!ps.length) return;
+  sector = s; tocado = false;
   // Márgenes: abajo, sitio para la leyenda; a los lados, para los nombres
   const b = L.latLngBounds(ps.map(p => p.c)), arribaIzq = L.point(24, 24), abajoDer = L.point(24, 64);
   const tope = mapa.getBoundsZoom(b, false, arribaIzq.add(abajoDer).add([60, 20]));
@@ -503,13 +537,23 @@ function irA(s, alLlegar) {
   });
 }
 // Al arrastrar el plano a otro sitio, ningún sector queda marcado
-mapa.on('dragstart', () => document.querySelectorAll('.sectores button.on').forEach(b => b.classList.remove('on')));
+mapa.on('dragstart', () => { sector = null; tocado = true; document.querySelectorAll('.sectores button.on').forEach(b => b.classList.remove('on')); });
+// Acercar o alejar con la mano (rueda, dos dedos, doble toque, botones + y −, teclado) también deja de ser el encuadre automático
+const aMano = e => { if (!e.target.closest('.ficha')) tocado = true; };
+['wheel', 'dblclick', 'keydown'].forEach(t => mapa.getContainer().addEventListener(t, aMano, { passive: true }));
+mapa.getContainer().addEventListener('touchstart', e => { if (e.touches.length > 1) aMano(e); }, { passive: true });
+document.querySelector('.leaflet-control-zoom').addEventListener('click', aMano);
 
 // ---------- Botones ----------
-// Si tras cambiar de filtro o de pestaña no queda nada a la vista, se vuelve a enseñar toda la estación
-function sinNadaALaVista() {
-  const v = mapa.getBounds();
-  return !grupos.some(g => v.contains(g.ll)) && !burbujas.some(b => v.contains(b.getLatLng()));
+// Tras cambiar de pestaña o de filtro: con un sector elegido, a lo de ese sector (si no tiene nada, toda la estación); si el plano
+// está como al entrar, a la entrada de lo nuevo; si lo has movido tú, se queda donde está, salvo que no se vea nada (ni en el borde).
+function reencuadrar() {
+  if (sector && visibles().some(p => p.z === sector)) irA(sector);
+  else if (sector || !tocado || !algoALaVista()) vistaInicial();
+}
+function algoALaVista() {
+  const tam = mapa.getSize(), dentro = ll => { const p = mapa.latLngToContainerPoint(ll); return p.x > 30 && p.x < tam.x - 30 && p.y > 30 && p.y < tam.y - 30; };
+  return grupos.some(g => dentro(g.ll)) || burbujas.some(b => dentro(b.getLatLng()));
 }
 function pintarFiltros() {
   const f = document.getElementById('filtros');
@@ -517,7 +561,7 @@ function pintarFiltros() {
     `<button data-menu="${k}" class="${k === menu ? 'on' : ''}" aria-pressed="${k === menu}"><i style="background:${k === 'todos' ? fondo(coloresTodos()) : m.color}"></i>${m.nombre}<span>${REST.filter(m.vale).length}</span></button>`).join('');
   f.querySelectorAll('button').forEach(b => b.onclick = () => {
     menu = b.dataset.menu; cerrar(); pintarFiltros(); pintarSectores(); pintar();
-    if (sinNadaALaVista()) vistaInicial();
+    reencuadrar();
   });
   pistaFila(f);
 }
@@ -526,7 +570,7 @@ function pintarSectores() {
   visibles().forEach(p => (cuenta[p.z] = (cuenta[p.z] || 0) + 1));
   const f = document.getElementById('sectores');
   f.innerHTML = SECTORES.filter(z => cuenta[z])
-    .map(z => `<button data-z="${esc(z)}">${esc(z)}${modo !== 'escuela' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('')
+    .map(z => `<button data-z="${esc(z)}"${z === sector ? ' class="on"' : ''}>${esc(z)}${modo !== 'escuela' ? `<span>${cuenta[z]}</span>` : ''}</button>`).join('')
     // En Alquiler, al final: las tiendas del mismo sector que salen en el plano de otra estación (salvo con ?solo=1)
     + (modo === 'alquiler' && q.get('solo') !== '1' ? (EST.masTiendas || []).filter(m => Object.prototype.hasOwnProperty.call(ESTACIONES, m.cod))
       .map(m => `<a class="otra" href="?e=${m.cod}&amp;modo=alquiler">${+m.n} más en ${esc(m.nombre)} →</a>`).join('') : '');
@@ -552,7 +596,7 @@ function cambiarModo(m) {
   mapa.invalidateSize({ animate: false });   // las filas de botones cambian el alto del plano
   nivel(); pintar();
 }
-document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { cambiarModo(b.dataset.modo); if (sinNadaALaVista()) vistaInicial(); });
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { cambiarModo(b.dataset.modo); reencuadrar(); });
 // Botones de estación: cada uno vuelve a abrir esta página con otra estación (?e=), conservando la pestaña y el filtro si allí
 // existen; el de la estación actual vuelve a enseñarla entera. Con ?solo=1 (p. ej. en el enlace de un bono) solo sale la del enlace.
 function pintarEstaciones() {
@@ -603,8 +647,12 @@ function ajustarMin() {
 }
 // Vista de entrada: toda la estación; en Dónde comer, alejando un poco más si alguna burbuja de sector se sale de la pantalla
 function vistaInicial() {
+  sector = null; tocado = false;
+  document.querySelectorAll('.sectores button.on').forEach(b => b.classList.remove('on'));
+  // Si un paso no cambia el zoom, Leaflet no avisa (zoomend) y las burbujas seguirían colocadas para la vista de antes: se repinta aquí
+  const ver = mover => { const z = mapa.getZoom(); mover(); if (mapa.getZoom() === z) pintar(); };
   // maxZoom 15: si los puntos están muy juntos (OA), que se vea algo de estación alrededor
-  mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], maxZoom: 15, animate: false });
+  ver(() => mapa.fitBounds(L.latLngBounds(visibles().map(p => p.c)), { padding: [28, 28], maxZoom: 15, animate: false }));
   for (let i = 0; i < 12 && burbujas.length; i++) {
     const tam = mapa.getSize(), rs = burbujas.map(b => rect(b.getElement().firstChild));
     const l = Math.min(...rs.map(r => r.l)), r = Math.max(...rs.map(r => r.r)), t = Math.min(...rs.map(r => r.t)), b = Math.max(...rs.map(r => r.b));
@@ -613,7 +661,7 @@ function vistaInicial() {
     const grande = pisan || r - l > tam.x || b - t > tam.y;
     // Pantalla muy apaisada (móvil en horizontal): para que quepan todas las burbujas se deja ver algo de borde a los lados
     if (grande && mapa.getZoom() - 0.25 < mapa.getMinZoom()) mapa.setMinZoom(mapa.getZoom() - 0.25);
-    mapa.setView(mapa.containerPointToLatLng([(l + r) / 2, (t + b) / 2]), grande ? mapa.getZoom() - 0.25 : mapa.getZoom(), { animate: false });
+    ver(() => mapa.setView(mapa.containerPointToLatLng([(l + r) / 2, (t + b) / 2]), grande ? mapa.getZoom() - 0.25 : mapa.getZoom(), { animate: false }));
   }
 }
 const q = new URLSearchParams(location.search);
