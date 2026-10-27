@@ -26,4 +26,5 @@ window.PLANO_PUNTOS = [{"id":"E-PA-01","t":"escuela","n":"Escuela Pal Arinsal â€
 {"id":"T-ARI-01","t":"tienda","n":"Pic Negre 2","u":"Pueblo","z":"Arinsal","d":"Carretera General, Ed. Jan","pa":false,"nota":"","c":[42.57249,1.483927]},
 {"id":"T-ARI-02","t":"tienda","n":"Esports Sant Moritz","u":"Pueblo","z":"Arinsal","d":"Carretera d'Arinsal, 16","pa":false,"nota":"","c":[42.57184,1.48418]},
 {"id":"T-ARI-03","t":"tienda","n":"Esports Rossell Arinsal","u":"Pie de pistas (Comallemple)","z":"Arinsal","d":"Edificio central pistas, sector Arinsal","pa":false,"nota":"","c":[42.572962,1.470442]},
-{"id":"T-ARI-04","t":"tienda","n":"Pic Negre 3","u":"Pie de pistas (Comallemple)","z":"Arinsal","d":"Pistas de Arinsal, cota 1.900","pa":false,"nota":"","c":[42.572842,1.470502]}];
+{"id":"T-ARI-04","t":"tienda","n":"Pic Negre 3","u":"Pie de pistas (Comallemple)","z":"Arinsal","d":"Pistas de Arinsal, cota 1.900","pa":false,"nota":"","c":[42.572842,1.470502]},
+{"id":"T-ARI-05","t":"tienda","n":"Sant Moritz (pistas)","u":"Pie de pistas","z":"Arinsal","d":"Edificio Comallemple","pa":false,"nota":"","c":[42.57313,1.47072]}];
