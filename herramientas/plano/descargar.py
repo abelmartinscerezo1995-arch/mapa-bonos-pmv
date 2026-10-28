@@ -1,6 +1,6 @@
 """Descarga lo que necesita el plano propio (una vez por temporada, o si cambian las pistas):
   - relieve: teselas de elevación Terrarium (AWS Terrain Tiles, z14)
-  - OpenStreetMap: pistas y remontes, pueblos y carreteras, bosques y lagos
+  - OpenStreetMap: pistas y remontes, pueblos y carreteras, bosques y lagos, y las calles de los pueblos (pestaña Alquiler)
 Todo va a herramientas/plano/cache/. Después: relieve.py (solo si quieres rehacer el relieve) y lineas.py.
 Uso: python herramientas/plano/descargar.py [GV PA ...]   (sin nada: todas las estaciones)"""
 import json
@@ -8,7 +8,7 @@ import os
 import subprocess
 import time
 
-from comun import CACHE, Z, elegidas
+from comun import CACHE, Z, cajas_calles, elegidas
 
 # Overpass pide identificarse (sin User-Agent responde 406) y a veces está lleno: se reintenta y se prueba otro servidor
 UA = "mapa-bonos-grandvalira/1.0"
@@ -19,6 +19,8 @@ CONSULTAS = {
     "bosque.json": 'way["natural"="wood"]({b}); way["landuse"="forest"]({b}); relation["natural"="wood"]({b}); relation["landuse"="forest"]({b});'
                    ' way["natural"="water"]({b}); relation["natural"="water"]({b});',
 }
+# Calles de los pueblos (pestaña Alquiler): solo alrededor de los pueblos y de las tiendas (comun.cajas_calles), sin caminos ni aceras
+CALLES = 'way["highway"~"^(trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|service|road)(_link)?$"]({b});'
 
 
 def relieve(e):
@@ -38,27 +40,34 @@ def relieve(e):
 def osm(e):
     os.makedirs(e.cache, exist_ok=True)
     caja = f"{e.sur - .01},{e.oeste - .01},{e.norte + .01},{e.este + .01}"
-    for nombre, cuerpo in CONSULTAS.items():
-        q = "[out:json][timeout:180];(" + cuerpo.format(b=caja) + ");out geom;"
-        destino, tmp = os.path.join(e.cache, nombre), os.path.join(e.cache, nombre + ".tmp")
-        for intento in range(6):
-            url = SERVIDORES[intento % 2]
-            subprocess.run(["curl", "-sS", "-A", UA, "-o", tmp, "--data-urlencode", "data=" + q, url], check=False)
-            try:
-                d = json.load(open(tmp, encoding="utf-8"))
-                n = len(d["elements"])
-                # Saturado, Overpass a veces responde "bien" pero vacío y con el error en "remark": no se da por buena
-                if not n or "error" in d.get("remark", ""):
-                    raise ValueError(d.get("remark", "sin elementos"))
-            except Exception:
-                print(f"  {nombre}: {url} no ha respondido bien, reintento en {15 * (intento + 1)} s")
-                time.sleep(15 * (intento + 1))
-                continue
-            os.replace(tmp, destino)
-            print(f"OpenStreetMap {nombre}: {n} elementos")
-            break
-        else:
-            raise SystemExit(f"No se ha podido descargar {nombre}. Prueba más tarde (se conserva la descarga anterior).")
+    consultas = {k: v.format(b=caja) for k, v in CONSULTAS.items()}
+    for nombre, cuerpo in consultas.items():
+        bajar(e, nombre, cuerpo)
+    # Las calles, después: sus zonas salen de los pueblos de extra.json
+    bajar(e, "calles.json", "".join(CALLES.format(b=",".join(map(str, c))) for c in cajas_calles(e)))
+
+
+def bajar(e, nombre, cuerpo):
+    """Una consulta a Overpass; si falla, reintenta (alternando servidores) y si no hay manera, se queda la descarga anterior."""
+    q = "[out:json][timeout:180];(" + cuerpo + ");out geom;"
+    destino, tmp = os.path.join(e.cache, nombre), os.path.join(e.cache, nombre + ".tmp")
+    for intento in range(6):
+        url = SERVIDORES[intento % 2]
+        subprocess.run(["curl", "-sS", "-A", UA, "-o", tmp, "--data-urlencode", "data=" + q, url], check=False)
+        try:
+            d = json.load(open(tmp, encoding="utf-8"))
+            n = len(d["elements"])
+            # Saturado, Overpass a veces responde "bien" pero vacío y con el error en "remark": no se da por buena
+            if not n or "error" in d.get("remark", ""):
+                raise ValueError(d.get("remark", "sin elementos"))
+        except Exception:
+            print(f"  {nombre}: {url} no ha respondido bien, reintento en {15 * (intento + 1)} s")
+            time.sleep(15 * (intento + 1))
+            continue
+        os.replace(tmp, destino)
+        print(f"OpenStreetMap {nombre}: {n} elementos")
+        return
+    raise SystemExit(f"No se ha podido descargar {nombre}. Prueba más tarde (se conserva la descarga anterior).")
 
 
 for e in elegidas():

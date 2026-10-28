@@ -1,6 +1,6 @@
 """Revisión automática del plano (necesita Playwright y Microsoft Edge): en cada tamaño de pantalla, la vista de entrada,
-cada sector con cada filtro (y en Escuela y Alquiler) y vistas al azar. Mide sobre lo que se ve de verdad (cajas del DOM): nombres que se pisan,
-nombres escondidos, burbujas cortadas, errores y archivos que fallan.
+cada sector con cada filtro (y en Escuela y Alquiler), vistas al azar y, en Alquiler, saltos de una telecabina a otra. Mide sobre lo que se ve de verdad (cajas del DOM): nombres que se pisan,
+nombres escondidos, burbujas cortadas, nombres encima de una telecabina (Alquiler), errores y archivos que fallan.
 Uso: python herramientas/plano/revisar.py [GV PA ...] [pantalla ...] [puerto]   (sin estaciones: todas; sin pantallas: todas)
 Resultados en herramientas/plano/cache/revision/."""
 import json, os, random, subprocess, sys, time
@@ -32,7 +32,9 @@ AUDITAR = """() => {
   const bur = burbujas.map(b => ({ n: b.getElement().textContent, k: R(b.getElement().firstChild) }));
   const fijos = [['zoom', R(document.querySelector('.leaflet-control-zoom'))]];
   const ley = document.getElementById('ley');
-  if (getComputedStyle(ley).opacity === '1') fijos.push(['leyenda', R(ley)]);
+  if (getComputedStyle(ley).opacity === '1' && ley.offsetWidth) fijos.push(['leyenda', R(ley)]);
+  // Pestaña Alquiler: los nombres de las tiendas no deben tapar los símbolos de telecabina / acceso a pistas
+  document.querySelectorAll('#mapa .acceso').forEach(el => fijos.push(['telecabina ' + el.dataset.n, R(el)]));
   const s = [];
   const vis = gs.filter(g => g.vis);
   vis.forEach((a, i) => {
@@ -94,7 +96,7 @@ def main():
                 pg.on("console", lambda m: m.type == "error" and errores.append("console: " + m.text))
                 pg.on("response", lambda r: r.status >= 400 and fallos.append(f"{r.status} {r.url}"))
                 pg.on("requestfailed", lambda r: fallos.append(f"falló {r.url} {r.failure}"))
-                out = {"estacion": est, "pantalla": nombre, "entrada": {}, "sectores": {}, "azar": [], "filas": {}}
+                out = {"estacion": est, "pantalla": nombre, "entrada": {}, "sectores": {}, "azar": [], "saltos": [], "filas": {}}
                 menus = None
                 for etiqueta, q in (("express", ""), ("self", "&menu=self"), ("carta", "&menu=carta"), ("todos", "&menu=todos"), ("escuela", "&modo=escuela"),
                                      ("alquiler", "&modo=alquiler")):
@@ -123,9 +125,20 @@ def main():
                         mover(pg, f"mapa.setView([{la}, {lo}], {z}, {{ animate: false }})")
                         a = pg.evaluate(AUDITAR); a["vista"] = f"{etiqueta} {la:.4f},{lo:.4f} z{z}"
                         out["azar"].append(a)
+                # Alquiler: saltar de un símbolo de telecabina a otro, de cerca y sin animación (así llega quien toca un sector
+                # y luego otro). Leaflet recoloca los símbolos después de avisar del movimiento: ningún nombre debe quedar encima.
+                accs = pg.evaluate("window.PLANO_CALLES ? PLANO_CALLES.accesos.map(a => [a.n, a.c]) : []")
+                zmax = pg.evaluate("mapa.getMaxZoom()")
+                for z in sorted({min(z, zmax) for z in (15, 16, 17)}):
+                    for i, (n, (la, lo)) in enumerate(accs):
+                        la0, lo0 = accs[i - 1][1]
+                        mover(pg, f"mapa.setView([{la0}, {lo0}], {z}, {{ animate: false }})")
+                        mover(pg, f"mapa.setView([{la}, {lo}], {z}, {{ animate: false }})")
+                        a = pg.evaluate(AUDITAR); a["vista"] = f"alquiler salto {accs[i - 1][0]} -> {n} z{z}"
+                        out["saltos"].append(a)
                 out["errores"], out["fallos"] = errores, fallos
                 json.dump(out, open(os.path.join(SALIDA, f"{est}_{nombre}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-                tot = list(out["entrada"].values()) + list(out["sectores"].values()) + out["azar"]
+                tot = list(out["entrada"].values()) + list(out["sectores"].values()) + out["azar"] + out["saltos"]
                 cortadas = sum(len(a["burFuera"]) for a in out["entrada"].values())
                 reales = [f for f in fallos if "ERR_ABORTED" not in f]   # ERR_ABORTED = teselas que Leaflet cancela al hacer zoom: normal
                 print(f"{est} {nombre:9} vistas {len(tot)} | nombres que se pisan {sum(len(a['solapes']) for a in tot)} | nombres escondidos {sum(len(a['ocultas']) for a in tot)}"
