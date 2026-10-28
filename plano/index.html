@@ -111,12 +111,25 @@ document.write(`<link rel="preload" as="script" href="${COD}/lineas.js"><link re
            border-radius: 999px; padding: 6px 12px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
   /* Fila de botones que no cabe: se difumina por la derecha para que se vea que hay más */
   .fila.mas { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
-  /* Móvil estrecho: los 4 filtros caben sin desplazar */
-  @media (max-width: 380px) {
+  /* Móvil: los 4 filtros caben sin desplazar. «Otros restaurantes» es largo: hasta 430 px de ancho (casi todos los móviles)
+     los filtros van compactos, y en los más estrechos, un poco más */
+  @media (max-width: 430px) {
     .filtros { gap: 4px; padding: 6px; }
     .filtros button { padding: 5px 6px; font-size: 11.5px; }
     .filtros button i { width: 8px; height: 8px; margin-right: 4px; }
     .filtros button span { margin-left: 3px; }
+  }
+  @media (max-width: 370px) {
+    .filtros { gap: 3px; padding: 6px 4px; }
+    .filtros button { padding: 5px 4px; font-size: 11px; }
+    .filtros button i { margin-right: 3px; }
+    .filtros button span { margin-left: 2px; }
+  }
+  @media (max-width: 340px) {
+    .filtros { gap: 2px; padding: 6px 3px; }
+    .filtros button { padding: 5px 3px; }
+  }
+  @media (max-width: 380px) {
     .estaciones { gap: 4px; }
     .estaciones a { padding: 5px 4px; font-size: 12px; }
   }
@@ -176,11 +189,12 @@ const ICO_E = '<svg viewBox="0 0 24 24"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2
 const ICO_T = '<svg viewBox="0 0 24 24"><path d="M7 2h7v8l5 4v4H5v-2h2zM3 20h18v2H3z"/></svg>';   // bota (como en el mapa completo)
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-// Filtros de Dónde comer (el primero es el que se ve al entrar)
+// Filtros de Dónde comer (el primero es el que se ve al entrar). La clave «carta» se queda así aunque el filtro se llame
+// «Otros restaurantes» (como en la web oficial): los enlaces que ya existen usan ?menu=carta
 const MENUS = {
   express: { nombre: 'Express', color: '#d0450e', vale: p => p.x },
   self:    { nombre: 'Self',    color: '#29843c', vale: p => p.s },
-  carta:   { nombre: 'A la carta',   color: '#6c7884', vale: p => !p.x && !p.s },
+  carta:   { nombre: 'Otros restaurantes', color: '#6c7884', vale: p => !p.x && !p.s },
   todos:   { nombre: 'Todos',        color: '#0b2b4c', vale: () => true },
 };
 const REST = D.puntos.filter(p => p.t === 'restaurante');
@@ -465,7 +479,7 @@ L.DomEvent.disableClickPropagation(ficha);
 L.DomEvent.disableScrollPropagation(ficha);
 const web = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return 'la web'; } };
 const enlace = p => /^https?:\/\//.test(p.w || '') ? `<a class="web" href="${esc(p.w)}" target="_blank" rel="noopener">Más info en ${esc(web(p.w))} ↗</a>` : '';
-const badges = p => (p.x ? '<span class="badge ex">Menú Express</span>' : '') + (p.s ? '<span class="badge se">Menú Self</span>' : '') + (!p.x && !p.s ? '<span class="badge ca">A la carta</span>' : '');
+const badges = p => (p.x ? '<span class="badge ex">Menú Express</span>' : '') + (p.s ? '<span class="badge se">Menú Self</span>' : '') + (!p.x && !p.s ? '<span class="badge ca">Otros restaurantes</span>' : '');
 // Tiendas: cómo llegar (Google Maps, como en el mapa completo), partner y qué incluye el alquiler (Excel, hoja Textos; **así** = negrita)
 const llegar = p => `<a class="web" href="https://www.google.com/maps/dir/?api=1&amp;destination=${+p.c[0]},${+p.c[1]}" target="_blank" rel="noopener">Cómo llegar ↗</a>`;
 // Ubicación y dirección, sin repetir ("Av. d'Encamp · Av. d'Encamp, 13" → "Av. d'Encamp, 13")
