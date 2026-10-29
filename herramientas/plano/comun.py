@@ -26,9 +26,10 @@ ESTACIONES = {
         pueblos={"Encamp": "Encamp", "Canillo": "Canillo", "el Tarter": "El Tarter", "Soldeu": "Soldeu", "Grau Roig": "Grau Roig",
                  "Pas de la Casa": "Pas de la Casa"},
         # Botones de sector, en este orden (como en la columna Zona del Excel; Encamp – Solanelles y Bordes d'Envalira
-        # solo tienen tiendas de alquiler, y Encamp – Funicamp, el restaurante de la base del Funicamp, en el pueblo).
-        # Peretol ya no es sector: su único restaurante (Bordes 1957) va con Encamp (decidido el 28-oct-2026)
-        sectores=["Encamp", "Encamp – Solanelles", "Encamp – Funicamp", "Canillo", "El Tarter", "Soldeu", "Bordes d'Envalira", "Grau Roig",
+        # solo tienen tiendas de alquiler).
+        # Peretol ya no es sector: su único restaurante (Bordes 1957) va con Encamp (decidido el 28-oct-2026).
+        # Encamp – Funicamp tampoco: My Corner Funicamp está arriba, en Solanelles, y va con Encamp (decidido el 29-oct-2026)
+        sectores=["Encamp", "Encamp – Solanelles", "Canillo", "El Tarter", "Soldeu", "Bordes d'Envalira", "Grau Roig",
                   "Pas de la Casa"],
         # Por debajo de este zoom, en Dónde comer y Alquiler los puntos van en una burbuja por sector (estación grande: más alto)
         burbujas=13.75,
